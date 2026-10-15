@@ -18,7 +18,7 @@ Never use general-purpose, Explore or Plan agents, and do not use the Workflow t
 - `doc-updater`: README, docs/CODEMAPS at the end of each phase
 Run independent agents in parallel. ECC agents have no web access: verify any vendor/API claim yourself (WebFetch) before relying on it.
 Load the `frontend-design` skill before any UI work, and `claude-api` before any LLM code
-(default model `claude-sonnet-5-5`, `claude-haiku-5-5` for bulk extraction; the app must still work with no API key).
+(default model `claude-opus-5-5` for every call, overridable by env; the app must still work with no API key).
 
 ## Phase loop
 1. `planner` → task list for the phase. 2. Build (tdd-guide for logic, you for UI wiring). 3. `pnpm verify` green

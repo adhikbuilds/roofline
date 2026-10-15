@@ -526,8 +526,8 @@ roofline/
 | `NEXT_PUBLIC_MAP_STYLE_URL` | — |
 | `ROOFLINE_COMMUTE_PROVIDER` | `heuristic` |
 | `ANTHROPIC_API_KEY` | (empty; optional) |
-| `ROOFLINE_LLM_MODEL` | `claude-sonnet-5-5` |
-| `ROOFLINE_LLM_BULK_MODEL` | `claude-haiku-5-5` |
+| `ROOFLINE_LLM_MODEL` | `claude-opus-5-5` |
+| `ROOFLINE_LLM_BULK_MODEL` | `claude-opus-5-5` |
 
 ---
 
