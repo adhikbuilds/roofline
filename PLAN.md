@@ -1,6 +1,6 @@
-# Implementation Plan: Nivaas
+# Implementation Plan: Roofline
 
-> Nivaas (निवास, "dwelling") is a rental intelligence platform for Bangalore. It replicates what the reference product (CasaSetu, recon 2026-10-15) does well and adds the engineering depth that product lacks. The reference product's name and branding appear **only in this planning document and `docs/recon/`**. They never appear in product code, copy, seed data or UI. `pnpm brand-guard` enforces this.
+> Roofline is a rental intelligence platform for Bangalore. It replicates what the reference product (CasaSetu, recon 2026-10-15) does well and adds the engineering depth that product lacks. The reference product's name and branding appear **only in this planning document and `docs/recon/`**. They never appear in product code, copy, seed data or UI. `pnpm brand-guard` enforces this.
 
 ---
 
@@ -18,10 +18,10 @@
 5. **Compare** for 2–4 listings: commute estimates from a work location (bike, car or metro) and a total-cost-of-living breakdown.
 6. **Analytics** that are correct: KPIs, rent distributions, a locality heatmap, ₹/sqft, trends, source comparison, and a data-quality panel that shows what was rejected and why.
 
-**Data stance:** No scraping or hot-linking of any portal. v1 runs on a **deterministic synthetic Bangalore seed**: at least 6,400 raw source rows producing at least 5,000 canonical listings across 69 real localities. The seed records **ground truth** (true clusters, true expected rents, true deals), so dedup, fair-rent and deal quality are *measured* rather than asserted. Real data arrives later through the documented `SourceAdapter` interface (licensed feeds or owner submissions). Every page carries a visible synthetic-data disclosure while `NIVAAS_DATA_MODE=synthetic`.
+**Data stance:** No scraping or hot-linking of any portal. v1 runs on a **deterministic synthetic Bangalore seed**: at least 6,400 raw source rows producing at least 5,000 canonical listings across 69 real localities. The seed records **ground truth** (true clusters, true expected rents, true deals), so dedup, fair-rent and deal quality are *measured* rather than asserted. Real data arrives later through the documented `SourceAdapter` interface (licensed feeds or owner submissions). Every page carries a visible synthetic-data disclosure while `ROOFLINE_DATA_MODE=synthetic`.
 
 **Assumptions:**
-- A new repository named `nivaas/`, a sibling of `solum/`. Node ≥ 20, pnpm 9, Docker Desktop.
+- A new repository named `roofline/`, a sibling of `solum/`. Node ≥ 20, pnpm 9, Docker Desktop.
 - Single city (Bangalore). Currency is INR stored as integer rupees.
 - Time zone is Asia/Kolkata for display. Storage is `timestamptz`.
 - The fixed "as-of" date for the seed is **2026-10-01**. The engine never reads the clock.
@@ -31,7 +31,7 @@
 
 ## 2. What we keep from CasaSetu
 
-| Keep | Why it works | How Nivaas does it (and fixes the bug next to it) |
+| Keep | Why it works | How Roofline does it (and fixes the bug next to it) |
 |---|---|---|
 | One search across many sources with a "N hidden" count | Saves renters from juggling tabs, and the honesty builds trust | The header reads **"5,214 listings · 1,183 duplicates merged · 191 rejected (why?)"**. Duplicates and quality rejections are counted **separately** (the reference lumps them into "17,841 hidden"). Per-query results show `matched` and `duplicatesMerged = Σ(member_count−1)` for that query. |
 | Move-in cost on the card (rent + deposit) | It is the number renters actually budget for | Always shown. If the deposit is unknown, the card says **"Move-in ≥ ₹34K · deposit not listed"** instead of silently dropping the line, which is what the reference does on "Deposit: N/A" cards. |
@@ -207,7 +207,7 @@ There are two models, both pure TS and deterministic. They are fitted per run on
 ### 3.4 Map, search and alerts
 
 - **Map:** MapLibre GL JS v5, client-only (`next/dynamic` with `ssr:false`).
-  - Default style is the OpenFreeMap "positron" vector style (no key; host `tiles.openfreemap.org`), restyled at runtime to Nivaas tokens (water, parks and roads desaturated).
+  - Default style is the OpenFreeMap "positron" vector style (no key; host `tiles.openfreemap.org`), restyled at runtime to Roofline tokens (water, parks and roads desaturated).
   - Attribution "© OpenStreetMap contributors · OpenFreeMap" is always visible.
   - Markers come from a GeoJSON source with `cluster: true, clusterRadius: 50, clusterMaxZoom: 15`. Cluster bubbles show count. Unclustered pins show "₹34K" labels coloured by badge.
   - The heatmap layer (analytics) is a hex fill from `/api/v1/analytics/heatmap`.
@@ -233,7 +233,7 @@ There are two models, both pure TS and deterministic. They are fitted per run on
 
 `CommuteProvider` interface: `estimate(from, to, mode, opts) → { minutes, low, high, distanceKm, legs[], costPerTrip, method }`.
 - v1 is `HeuristicCommuteProvider`.
-- `OsrmCommuteProvider` is a documented stub, swappable later by env var `NIVAAS_COMMUTE_PROVIDER`.
+- `OsrmCommuteProvider` is a documented stub, swappable later by env var `ROOFLINE_COMMUTE_PROVIDER`.
 
 Constants live in `commute/constants.ts`, each with a unit and an "approx, as of 2026-10" comment:
 
@@ -320,7 +320,7 @@ Charts are **server-rendered SVG** primitives (`components/charts/*`, using `d3-
   - Per-locality landing pages are ISR (revalidate 3600) and include JSON-LD `Place` + `Dataset`.
   - OG images via `next/og` for listings and localities, with fonts bundled locally.
   - `llms.txt` describes the site, API, methodology and data provenance.
-  - **While `NIVAAS_DATA_MODE=synthetic`:** `robots.txt` is `Disallow: /` and every page carries `<meta name="robots" content="noindex">`. The machinery is built and tested but does not index synthetic data.
+  - **While `ROOFLINE_DATA_MODE=synthetic`:** `robots.txt` is `Disallow: /` and every page carries `<meta name="robots" content="noindex">`. The machinery is built and tested but does not index synthetic data.
 - **Optional LLM:** `@anthropic-ai/sdk`.
   - (a) Natural-language search parse ("2bhk near manyata under 35k furnished" → `Filters`) using **claude-sonnet-5-5** with tool-use JSON schema, a Zod-validated result, a 3 s timeout, and fallback to the engine rules parser.
   - (b) Bulk extraction of structured fields from free-text descriptions during ingest using **claude-haiku-5-5**. It never overrides structured fields, adds flag `EXTRACTED_LLM`, and caches in `llm_cache` by input hash.
@@ -345,10 +345,10 @@ Charts are **server-rendered SVG** primitives (`components/charts/*`, using `d3-
                          ┌──────────────▼──────────── packages/db ───────────────────────────────┐
                          │ Postgres 16 + PostGIS (docker, host :5432)                             │
                          │ migrations/*.sql (source of truth) · Drizzle schema (typed queries)    │
-                         │ queries/* (repositories) · roles: nivaas (owner), nivaas_app (web)     │
-                         │ schema seed_truth (no grant to nivaas_app)                             │
+                         │ queries/* (repositories) · roles: roofline (owner), roofline_app (web)     │
+                         │ schema seed_truth (no grant to roofline_app)                             │
                          └──────────────▲────────────────────────────────────────────────────────┘
-                                        │ reads + user-table DML (nivaas_app, RLS by user)
+                                        │ reads + user-table DML (roofline_app, RLS by user)
                          ┌──────────────┴──────────── apps/web (Next 15, :3000) ──────────────────┐
   Browser ◄─────────────►│ RSC pages · route handlers /api/v1/* (public) /api/me/* (session)      │
   MapLibre (client-only) │ defineRoute(Zod) → validate · rate-limit (pg) · OpenAPI · Auth.js       │
@@ -368,19 +368,19 @@ These are enforced by `dependency-cruiser` through `pnpm check:boundaries`.
 
 | Package | May import | Must not import | Owns |
 |---|---|---|---|
-| `@nivaas/engine` | nothing (devDeps: vitest, fast-check) | any package, `node:*`, `Date.now`, `Math.random` (ESLint `no-restricted-properties`) | all domain logic, `ENGINE_VERSION`, `Trace`, `Flag` |
-| `@nivaas/db` | engine (types and enums) | ingest, web | migrations, migrator, Drizzle schema, client (`withAdmin`, `withUser`), query modules, reference data loader, drift check |
-| `@nivaas/ingest` | engine, db, `@anthropic-ai/sdk` (optional) | web | `SourceAdapter`, adapters, pipeline, CLI, seed, evals |
-| `@nivaas/web` | engine, db, `@anthropic-ai/sdk` (optional) | ingest | UI, API, auth, rate limits, OpenAPI, SEO |
+| `@roofline/engine` | nothing (devDeps: vitest, fast-check) | any package, `node:*`, `Date.now`, `Math.random` (ESLint `no-restricted-properties`) | all domain logic, `ENGINE_VERSION`, `Trace`, `Flag` |
+| `@roofline/db` | engine (types and enums) | ingest, web | migrations, migrator, Drizzle schema, client (`withAdmin`, `withUser`), query modules, reference data loader, drift check |
+| `@roofline/ingest` | engine, db, `@anthropic-ai/sdk` (optional) | web | `SourceAdapter`, adapters, pipeline, CLI, seed, evals |
+| `@roofline/web` | engine, db, `@anthropic-ai/sdk` (optional) | ingest | UI, API, auth, rate limits, OpenAPI, SEO |
 
 ### 4.3 Conventions mirrored from solum (and deliberate deviations)
 
 **Mirrored:**
-- Package scope and module format: `@nivaas/*`, `"type": "module"`, `main`/`types` pointing at `./src/index.ts` (no build step).
+- Package scope and module format: `@roofline/*`, `"type": "module"`, `main`/`types` pointing at `./src/index.ts` (no build step).
 - Scripts run via `vite-node`.
 - Strict tsconfig flags: `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`, `isolatedModules`, `noImplicitOverride`.
-- `next.config.mjs` with `transpilePackages: ['@nivaas/engine','@nivaas/db']`, webpack `extensionAlias {'.js': ['.ts','.tsx','.js']}` and `serverExternalPackages: ['pg']`.
-- `db/src/client.ts` dotenv walk-up loader, TLS for non-localhost, and `withAdmin`/`withUser` (solum's `withTenant` pattern: `SET LOCAL ROLE nivaas_app` + `set_config('nivaas.user_id', …, true)`).
+- `next.config.mjs` with `transpilePackages: ['@roofline/engine','@roofline/db']`, webpack `extensionAlias {'.js': ['.ts','.tsx','.js']}` and `serverExternalPackages: ['pg']`.
+- `db/src/client.ts` dotenv walk-up loader, TLS for non-localhost, and `withAdmin`/`withUser` (solum's `withTenant` pattern: `SET LOCAL ROLE roofline_app` + `set_config('roofline.user_id', …, true)`).
 - Numbered SQL migrations applied by a checksum migrator (`schema_migrations`) that **refuses edited migrations**.
 - Root scripts `db:up/db:down/db:migrate/db:seed/db:reset/db:fresh/verify`.
 - Deterministic LCG/mulberry32 seed. Every synthetic row is tagged `is_synthetic`. Aggregates are derived, never stated.
@@ -389,11 +389,11 @@ These are enforced by `dependency-cruiser` through `pnpm check:boundaries`.
 
 **Deviations, stated so nobody mirrors the wrong value:**
 
-| Area | solum | Nivaas | Why |
+| Area | solum | Roofline | Why |
 |---|---|---|---|
 | Web port | 3100 | **3000** | Fixed decision |
-| Postgres host port | 5433 | **5432** | Fixed decision. `pnpm preflight` **fails loudly** if 5432 is held by anything other than `nivaas-postgres`. It never silently remaps. |
-| DB image | `postgres:16-alpine` | `postgis/postgis:16-3.5` | PostGIS. If no arm64 manifest exists, fall back to `packages/db/docker/Dockerfile`: `FROM postgres:16-bookworm` + `apt-get install postgresql-16-postgis-3`. Selected by `NIVAAS_PG_BUILD=local`. |
+| Postgres host port | 5433 | **5432** | Fixed decision. `pnpm preflight` **fails loudly** if 5432 is held by anything other than `roofline-postgres`. It never silently remaps. |
+| DB image | `postgres:16-alpine` | `postgis/postgis:16-3.5` | PostGIS. If no arm64 manifest exists, fall back to `packages/db/docker/Dockerfile`: `FROM postgres:16-bookworm` + `apt-get install postgresql-16-postgis-3`. Selected by `ROOFLINE_PG_BUILD=local`. |
 | Data access | raw `pg` | `pg` Pool + **Drizzle** (`drizzle-orm/node-postgres`) as typed query layer | SQL files remain the source of truth. Drizzle Kit is **not** used to apply migrations. `pnpm db:check-drift` migrates a scratch DB and compares `information_schema.columns` and enum labels to Drizzle `getTableConfig()` output. A mismatch fails `verify`. Geography columns use a Drizzle `customType`; spatial SQL via the `sql` template. |
 | Styling | plain CSS variables | Tailwind v4 (`@tailwindcss/postcss`) with tokens in `@theme` | Keeps the direction comment block. Tokens are CSS variables, so the solum habit carries over. |
 | Lint | none | ESLint flat config + dependency-cruiser | Engine purity and package boundaries need machine enforcement |
@@ -461,7 +461,7 @@ Fictional sources, all `is_synthetic=true` and displayed as "Name (demo)":
 
 **Photos:** 3–9 per listing, each `{ seed, dhash }`. They are rendered by `/img/plate/[seed]` as deterministic SVG "plates": a procedural floor-plan illustration from BHK plus a palette. **No external images at all.**
 
-**Ground truth:** written to schema `seed_truth` (`units`, `source_rows`, `true_rent`, `true_deals`). The `nivaas_app` role has **no grant** on it. Evals read it via the admin role only.
+**Ground truth:** written to schema `seed_truth` (`units`, `source_rows`, `true_rent`, `true_deals`). The `roofline_app` role has **no grant** on it. Evals read it via the admin role only.
 
 ### 4.5 SourceAdapter contract (`packages/ingest/src/adapter.ts`, documented in `docs/source-adapters.md`)
 
@@ -495,7 +495,7 @@ Rules:
 ### 4.6 Repository layout
 
 ```
-nivaas/
+roofline/
 ├─ apps/web/  app/{page.tsx,pgs,deals,compare,analytics/{page,quality},listing/[id],localities/{page,[slug]},
 │             activity,signin,about,methodology,api-docs,dev/mail,img/plate/[seed]/route.ts,
 │             sitemap.ts,robots.ts,llms.txt/route.ts,api/{health,v1/**,me/**,auth/[...nextauth]}}
@@ -514,20 +514,20 @@ nivaas/
 
 | Variable | Value |
 |---|---|
-| `DATABASE_URL` | `postgres://nivaas:nivaas@localhost:5432/nivaas` |
-| `DATABASE_URL_TEST` | `…/nivaas_test` |
+| `DATABASE_URL` | `postgres://roofline:roofline@localhost:5432/roofline` |
+| `DATABASE_URL_TEST` | `…/roofline_test` |
 | `AUTH_SECRET` | — |
 | `AUTH_URL` | `http://localhost:3000` |
-| `NIVAAS_DATA_MODE` | `synthetic` |
-| `NIVAAS_DEV_MAILBOX` | `1` |
+| `ROOFLINE_DATA_MODE` | `synthetic` |
+| `ROOFLINE_DEV_MAILBOX` | `1` |
 | `IP_HASH_SALT` | — |
 | `TRUST_PROXY` | `0` |
 | `RATE_LIMIT_PUBLIC_PER_MIN` | `120` |
 | `NEXT_PUBLIC_MAP_STYLE_URL` | — |
-| `NIVAAS_COMMUTE_PROVIDER` | `heuristic` |
+| `ROOFLINE_COMMUTE_PROVIDER` | `heuristic` |
 | `ANTHROPIC_API_KEY` | (empty; optional) |
-| `NIVAAS_LLM_MODEL` | `claude-sonnet-5-5` |
-| `NIVAAS_LLM_BULK_MODEL` | `claude-haiku-5-5` |
+| `ROOFLINE_LLM_MODEL` | `claude-sonnet-5-5` |
+| `ROOFLINE_LLM_BULK_MODEL` | `claude-haiku-5-5` |
 
 ---
 
@@ -539,7 +539,7 @@ All tables are in schema `public` unless noted. Money is `integer` rupees. Geo i
 
 | File | Contents |
 |---|---|
-| `0001_extensions_roles.sql` | extensions, roles `nivaas_app`, schema `seed_truth` |
+| `0001_extensions_roles.sql` | extensions, roles `roofline_app`, schema `seed_truth` |
 | `0002_reference.sql` | localities, aliases, metro, presets, sources |
 | `0003_ingest.sql` | runs, raw, source listings, observations |
 | `0004_listings.sql` | listings, dedup, redirects, models, estimates |
@@ -629,7 +629,7 @@ That is **69 localities**.
 | Table | Key columns | Indexes / RLS |
 |---|---|---|
 | `users` | `id uuid`, `email citext UNIQUE`, `email_verified`, `name`, `created_at` | |
-| `favorites` | `user_id`, `listing_id`, `created_at` | PK(user_id, listing_id). RLS `user_id = current_setting('nivaas.user_id')::uuid` |
+| `favorites` | `user_id`, `listing_id`, `created_at` | PK(user_id, listing_id). RLS `user_id = current_setting('roofline.user_id')::uuid` |
 | `activity_events` | `id bigserial`, `user_id`, `kind` (view/favorite/unfavorite/search/compare/save_search/alert_open), `listing_id`, `payload jsonb` (≤ 4 KB check), `created_at` | (user_id, created_at DESC). RLS. 180-day retention job. |
 | `saved_searches` | `id`, `user_id`, `name`, `filters jsonb`, `filters_hash char(64)`, `cadence`, `last_checked_at`, `created_at` | UNIQUE(user_id, filters_hash). RLS. Max 20 per user. |
 | `notifications` | `id`, `user_id`, `saved_search_id`, `listing_id`, `kind`, `created_at`, `read_at` | UNIQUE(saved_search_id, listing_id), (user_id, read_at NULLS FIRST). RLS. |
@@ -643,7 +643,7 @@ That is **69 localities**.
 | `rate_limit_hits(key text, window_start timestamptz, count int)` | PK(key, window_start). Rows older than 1 h purged by `withRateLimit` on 1% of calls. |
 | `llm_cache(input_hash char(64) PK, model, output jsonb, created_at)` | Optional LLM cache |
 | `owner_submissions(id, payload jsonb, status, created_at)` | Schema only in v1 |
-| `seed_truth.units / source_rows / true_rent / true_deals` | Eval ground truth. **No grant to `nivaas_app`.** |
+| `seed_truth.units / source_rows / true_rent / true_deals` | Eval ground truth. **No grant to `roofline_app`.** |
 
 ### Materialized views (refreshed `CONCURRENTLY` at the end of each ingest)
 
@@ -706,7 +706,7 @@ That is **69 localities**.
 - **Auth:** `/api/auth/[...nextauth]`. Sign-in is limited to 5 per 15 min per email-hash and IP.
 - **Infra:** `GET /api/health` → `{ ok, db, dataVersion, engineVersion, dataMode }`.
 - **Non-API:** `/sitemap.xml`, `/robots.txt`, `/llms.txt`, `/listing/[id]/opengraph-image`, `/localities/[slug]/opengraph-image`, `/img/plate/[seed]` (SVG, immutable cache).
-- **Dev only:** `/dev/mail`. It returns `notFound()` unless `NODE_ENV !== 'production' && NIVAAS_DEV_MAILBOX === '1'`, and `scripts/assert-prod-env.ts` fails `next build` if `NIVAAS_DEV_MAILBOX` is set while `NODE_ENV=production`.
+- **Dev only:** `/dev/mail`. It returns `notFound()` unless `NODE_ENV !== 'production' && ROOFLINE_DEV_MAILBOX === '1'`, and `scripts/assert-prod-env.ts` fails `next build` if `ROOFLINE_DEV_MAILBOX` is set while `NODE_ENV=production`.
 
 ### CLI (not HTTP)
 
@@ -767,8 +767,8 @@ The status colours are the only other colours, and each one reports something.
 - `prefers-reduced-motion` reduces everything to opacity-only.
 
 **Brand:**
-- Wordmark: lowercase "nivaas" in Fraunces 600.
-- Mark: a doorway arch (rounded-top rectangle outline) with a marigold dot at the threshold (the lamp at the door). SVGs in `apps/web/public/brand/`.
+- Wordmark: lowercase "roofline" in Fraunces 600.
+- Mark: a single-stroke roofline (a low gable chevron over a short horizontal rule) with a marigold dot under the apex (the lamp in the window). SVGs in `apps/web/public/brand/`.
 - Voice: plain, numerate and Bangalore-specific. Hero: "Every rental in Bangalore, counted once." Subline: "5,214 homes and PG beds from 5 demo sources. 1,183 duplicates merged, 191 rejected for bad data. See why."
 
 **Global elements:**
@@ -824,7 +824,7 @@ The status colours are the only other colours, and each one reports something.
 
 ### Phase 0: Scaffold and brand shell
 
-**Goal:** A runnable monorepo with PostGIS on :5432, a migrator, a Next app on :3000 showing the Nivaas shell, all test harnesses, the screenshot script and the guards.
+**Goal:** A runnable monorepo with PostGIS on :5432, a migrator, a Next app on :3000 showing the Roofline shell, all test harnesses, the screenshot script and the guards.
 
 **Tasks:**
 1. `architect`: confirm the layout in §4.6, the boundaries in §4.2 and the solum deviations table in §4.3. Output an ADR in the PR description.
@@ -833,10 +833,10 @@ The status colours are the only other colours, and each one reports something.
    - `package.json` scripts: `dev, build, test, typecheck, lint, e2e, screens, verify, preflight, brand-guard, check:boundaries, db:*, ingest:run, alerts:run, model:fit, eval:*`.
    - `pnpm-workspace.yaml` (`apps/*`, `packages/*`), `tsconfig.base.json` with solum strict flags, ESLint flat config (engine bans `Date.now`, `Math.random`, `node:*`), `.dependency-cruiser.cjs`, `.env.example` (§4.6).
 4. `tdd-guide`: `docker-compose.yml`.
-   - Service `postgres`, image `postgis/postgis:16-3.5` (with the `NIVAAS_PG_BUILD=local` Dockerfile fallback), container `nivaas-postgres`, `5432:5432`, volume `nivaas-pgdata`, `pg_isready` healthcheck.
-   - `docker/init/01-test-db.sql` creates `nivaas_test`.
-5. `tdd-guide`: `scripts/preflight.ts`. It checks Node ≥ 20, the pnpm version, the Docker daemon, port 5432 (free, or owned by `nivaas-postgres`, else exit 1 with the holder's details) and port 3000. Tests mock `net.createServer`.
-6. `tdd-guide`: `packages/db`. Port solum's `client.ts` (walk-up dotenv, `withAdmin`, `withUser`) and `migrate.ts` (checksum, refuses edits), plus `reset.ts`. Migration `0001_extensions_roles.sql`. `check-drift.ts` skeleton. Vitest integration test against `nivaas_test`: migrations are idempotent, and an edited migration is refused.
+   - Service `postgres`, image `postgis/postgis:16-3.5` (with the `ROOFLINE_PG_BUILD=local` Dockerfile fallback), container `roofline-postgres`, `5432:5432`, volume `roofline-pgdata`, `pg_isready` healthcheck.
+   - `docker/init/01-test-db.sql` creates `roofline_test`.
+5. `tdd-guide`: `scripts/preflight.ts`. It checks Node ≥ 20, the pnpm version, the Docker daemon, port 5432 (free, or owned by `roofline-postgres`, else exit 1 with the holder's details) and port 3000. Tests mock `net.createServer`.
+6. `tdd-guide`: `packages/db`. Port solum's `client.ts` (walk-up dotenv, `withAdmin`, `withUser`) and `migrate.ts` (checksum, refuses edits), plus `reset.ts`. Migration `0001_extensions_roles.sql`. `check-drift.ts` skeleton. Vitest integration test against `roofline_test`: migrations are idempotent, and an edited migration is refused.
 7. `tdd-guide`: `packages/engine` with `version.ts`, `trace.ts`, `flags.ts` and `money.ts`. `formatINR` tests: `125000 → "₹1,25,000"`, short forms `42000 → "₹42K"`, `150000 → "₹1.5L"`, `null → "—"`.
 8. `tdd-guide`: `packages/ingest` skeleton with `adapter.ts` types and `cli.ts` (commander) printing help.
 9. `tdd-guide`: `apps/web`.
@@ -851,10 +851,10 @@ The status colours are the only other colours, and each one reports something.
 
 **Acceptance:**
 - [ ] `pnpm install && pnpm preflight` → exit 0. With another container bound to 5432, `pnpm preflight` → exit 1 and the message names the conflicting process.
-- [ ] `pnpm db:up && docker exec nivaas-postgres psql -U nivaas -d nivaas -tAc "SELECT postgis_full_version()"` → output starts with `POSTGIS="3.`
+- [ ] `pnpm db:up && docker exec roofline-postgres psql -U roofline -d roofline -tAc "SELECT postgis_full_version()"` → output starts with `POSTGIS="3.`
 - [ ] `pnpm db:migrate` twice → the second run prints only `=` lines and "Schema up to date".
-- [ ] `pnpm --filter @nivaas/engine test` → formatINR tests pass. `pnpm typecheck` → 0 errors.
-- [ ] `curl -s localhost:3000/ | grep -c "Demo data"` ≥ 1, and `<title>` contains "Nivaas".
+- [ ] `pnpm --filter @roofline/engine test` → formatINR tests pass. `pnpm typecheck` → 0 errors.
+- [ ] `curl -s localhost:3000/ | grep -c "Demo data"` ≥ 1, and `<title>` contains "Roofline".
 - [ ] `pnpm brand-guard` → exit 0. Adding the word to a scratch file in `apps/` makes it exit 1.
 - [ ] app runs on :3000 and a screenshot is saved to docs/screens/phase-0.png
 
@@ -882,18 +882,18 @@ The status colours are the only other colours, and each one reports something.
 11. `tdd-guide`: `pnpm db:seed` (26 weekly runs) and `pnpm db:fresh`.
 12. `tdd-guide`: `/` lists listings (simple rows: rent, move-in, locality, BHK) with the ledger header counts from the DB. `/localities` shows a table of 69. `/img/plate/[seed]` SVG placeholder route.
 13. `code-explorer`: audit that the engine has no I/O, that `seed_truth` is not referenced by web, and that the solum conventions held.
-14. `security-reviewer`: SQL in `queries/*` is parameterized, the `nivaas_app` grants exclude `seed_truth` and `raw_listings`, and the plate route sanitizes `seed` (`^[a-z0-9-]{1,64}$`).
+14. `security-reviewer`: SQL in `queries/*` is parameterized, the `roofline_app` grants exclude `seed_truth` and `raw_listings`, and the plate route sanitizes `seed` (`^[a-z0-9-]{1,64}$`).
 15. `doc-updater`: `docs/data-provenance.md` (synthetic generator, fictional sources, truth schema) and `docs/methodology.md` §quality.
 
 **Acceptance:**
-- [ ] `pnpm --filter @nivaas/engine test --coverage` → all pass, line coverage ≥ 90% on `geo, stats, normalize, locality, quality`.
+- [ ] `pnpm --filter @roofline/engine test --coverage` → all pass, line coverage ≥ 90% on `geo, stats, normalize, locality, quality`.
 - [ ] `time pnpm db:fresh` → exit 0 in < 180 s. `SELECT count(*) FROM localities` = 69. `SELECT count(*) FROM source_listings` ≥ 6,400.
 - [ ] `SELECT count(*) FROM source_listings WHERE quality_status='accepted' AND (rent_inr < 1500 OR locality_id IS NULL)` = 0.
 - [ ] `SELECT count(*) FROM localities WHERE lower(name) IN ('from','bangalore','bengaluru')` = 0, and `SELECT count(*) FROM locality_unmatched WHERE raw_norm='from'` = 1.
 - [ ] The 20 planted empty-locality rows with valid geo are accepted with warning `LOCALITY_FROM_GEO`. The query joining `seed_truth.source_rows` on `defect='empty_locality_geo'` returns 20 accepted.
 - [ ] Rejected count equals the seed's planted-reject count exactly: `pnpm eval:quality` prints `planted_rejects=… matched=… extra_rejects≤1%`.
 - [ ] `SELECT count(*) FROM raw_listings WHERE payload::text ~* '(nobroker|magicbricks|nestaway|staticmb|http)'` = 0.
-- [ ] As `nivaas_app`: `SELECT 1 FROM seed_truth.units LIMIT 1` → permission denied.
+- [ ] As `roofline_app`: `SELECT 1 FROM seed_truth.units LIMIT 1` → permission denied.
 - [ ] Running `pnpm db:fresh` twice produces identical `SELECT md5(string_agg(id::text||rent_inr, ',' ORDER BY id)) FROM source_listings` (determinism).
 - [ ] app runs on :3000 and a screenshot is saved to docs/screens/phase-1.png
 
@@ -997,7 +997,7 @@ The status colours are the only other colours, and each one reports something.
 10. `doc-updater`: methodology §commute and §TCO (full constants table) and codemap for `engine/commute`.
 
 **Acceptance:**
-- [ ] `pnpm --filter @nivaas/engine test commute tco compare` → pass; coverage ≥ 90% for these modules.
+- [ ] `pnpm --filter @roofline/engine test commute tco compare` → pass; coverage ≥ 90% for these modules.
 - [ ] `curl -s 'localhost:3000/api/v1/commute?from=12.9352,77.6245&preset=manyata-tech-park&mode=car&peak=true' | jq .minutes` → `72`.
 - [ ] `curl -s '…mode=metro…preset=manyata-tech-park' | jq -r .reason` contains "No operational metro station".
 - [ ] e2e: on the assistant, the median score shown equals the median of the scores displayed on the shortlist cards (regression for the reference product's scale mismatch); every score is in [0,100].
@@ -1022,7 +1022,7 @@ The status colours are the only other colours, and each one reports something.
 10. `doc-updater`: methodology §analytics (universe, medians not means, min-n) and screenshots in docs.
 
 **Acceptance:**
-- [ ] `pnpm --filter @nivaas/db test analytics` → hand-computed fixture medians match exactly.
+- [ ] `pnpm --filter @roofline/db test analytics` → hand-computed fixture medians match exactly.
 - [ ] e2e: the `/analytics` text contains none of `N/A`, `NaN`, `undefined`, `₹1 ` and `11901` (regex scan of `innerText`).
 - [ ] e2e: every locality label in charts exists in `GET /api/v1/localities` (no "From").
 - [ ] e2e: for the top-localities panel, the `data-value` set on bars equals the `data-value` set in the table rows (same order, same numbers).
@@ -1051,7 +1051,7 @@ The status colours are the only other colours, and each one reports something.
 - [ ] `pnpm db:verify-rls` → exit 0 (cross-user read returns 0 rows).
 - [ ] Save search "2BHK Koramangala ≤ 45K", then `pnpm ingest:run --source synthetic --as-of 2026-10-08 && pnpm alerts:run` → `SELECT count(*) FROM notifications` ≥ 1 and `SELECT count(*) FROM email_outbox WHERE kind='alert'` ≥ 1. A second `pnpm alerts:run` → both counts unchanged.
 - [ ] `curl -X POST localhost:3000/api/me/favorites -d '{"listingId":"…"}'` without a session → 401. With a session but `Origin: https://evil.example` → 403.
-- [ ] `NODE_ENV=production NIVAAS_DEV_MAILBOX=1 pnpm build` → exit ≠ 0. `pnpm build && NIVAAS_DEV_MAILBOX= pnpm --filter @nivaas/web start` then `curl -o /dev/null -w '%{http_code}' localhost:3000/dev/mail` → 404.
+- [ ] `NODE_ENV=production ROOFLINE_DEV_MAILBOX=1 pnpm build` → exit ≠ 0. `pnpm build && ROOFLINE_DEV_MAILBOX= pnpm --filter @roofline/web start` then `curl -o /dev/null -w '%{http_code}' localhost:3000/dev/mail` → 404.
 - [ ] `DELETE /api/me` → `SELECT count(*)` for that user id across `users, favorites, activity_events, saved_searches, notifications, work_locations, sessions, accounts` = 0.
 - [ ] app runs on :3000 and a screenshot is saved to docs/screens/phase-7.png
 
@@ -1078,7 +1078,7 @@ The status colours are the only other colours, and each one reports something.
 
 **Acceptance:**
 - [ ] `pnpm dlx @redocly/cli lint http://localhost:3000/api/v1/openapi.json` → 0 errors. The contract suite passes for all `/api/v1` routes.
-- [ ] `curl -s localhost:3000/robots.txt` contains `Disallow: /` while `NIVAAS_DATA_MODE=synthetic`. `curl -s localhost:3000/ | grep -c 'name="robots" content="noindex'` = 1. `curl -s localhost:3000/sitemap.xml | grep -c '/localities/'` = 69.
+- [ ] `curl -s localhost:3000/robots.txt` contains `Disallow: /` while `ROOFLINE_DATA_MODE=synthetic`. `curl -s localhost:3000/ | grep -c 'name="robots" content="noindex'` = 1. `curl -s localhost:3000/sitemap.xml | grep -c '/localities/'` = 69.
 - [ ] `curl -sI localhost:3000/llms.txt` → `200` with `content-type: text/plain`. `curl -s localhost:3000/localities/koramangala/opengraph-image -o og.png && file og.png` → `PNG image data, 1200 x 630`.
 - [ ] With `ANTHROPIC_API_KEY` unset: `curl -s 'localhost:3000/api/v1/search/parse?q=2bhk+near+manyata+under+35k+furnished' | jq -r .parser` → `rules`, and `.filters.bhk == [2]`, `.filters.rent.max == 35000`. With a key set: `.parser` → `claude-sonnet-5-5`. `pnpm verify` passes in both modes.
 - [ ] `pnpm e2e --grep @a11y` → 0 serious or critical axe violations on `/`, `/pgs`, `/deals`, `/compare`, `/analytics`, `/analytics/quality`, `/listing/[id]`, `/activity`, `/localities/koramangala` at both viewports.
@@ -1111,13 +1111,13 @@ The status colours are the only other colours, and each one reports something.
   - Optional, server-side key only, exact model IDs `claude-sonnet-5-5` and `claude-haiku-5-5`.
   - Only the user's query text or listing text is sent; never emails or activity.
   - Outputs are Zod-validated, cached, and never trusted to override structured data.
-- **Brand clearance:** "Nivaas" and its variants are likely in use by Indian real-estate businesses. Run a trademark search (Classes 36, 42) and a domain check before any public launch. This cannot be verified offline.
+- **Brand clearance:** "Roofline" and its variants are likely in use by Indian real-estate businesses. Run a trademark search (Classes 36, 42) and a domain check before any public launch. This cannot be verified offline.
 
 ### Technical risks
 
 | Risk | Impact | Mitigation |
 |---|---|---|
-| `postgis/postgis` has no arm64 image on this Mac | DB won't start, or runs slowly under emulation | `NIVAAS_PG_BUILD=local` Dockerfile (`postgres:16-bookworm` + `postgresql-16-postgis-3`). Phase 0 acceptance checks `postgis_full_version()`. |
+| `postgis/postgis` has no arm64 image on this Mac | DB won't start, or runs slowly under emulation | `ROOFLINE_PG_BUILD=local` Dockerfile (`postgres:16-bookworm` + `postgresql-16-postgis-3`). Phase 0 acceptance checks `postgis_full_version()`. |
 | Port 5432 already used (local Postgres) | `db:up` fails confusingly | `pnpm preflight` fails loudly naming the holder. Never remap silently. solum uses 5433, so no conflict with it. |
 | Synthetic generator and models share assumptions (circular validation) | Metrics look better than reality | The generator has unmodelled effects (building effect, floor, parking). Truth deals include noise cases. Metrics are reported as "synthetic benchmark" only, and re-validated on licensed data via observed-rent CV. |
 | Dedup over-merging through chains | Distinct homes hidden | Guards (1 km span, 25% spread, one-per-source), planted hard negatives with a target of 0 merges, `dedup_pairs` audit trail, "possible" band not merged. |
@@ -1165,4 +1165,4 @@ The status colours are the only other colours, and each one reports something.
   - `noindex` and robots `Disallow` are active in synthetic mode.
   - OSM attribution is visible.
   - Approximate reference data is flagged.
-  - The trademark/domain check for "Nivaas" and the demo source names is recorded as a pre-launch blocker in `docs/data-provenance.md`.
+  - The trademark/domain check for "Roofline" and the demo source names is recorded as a pre-launch blocker in `docs/data-provenance.md`.

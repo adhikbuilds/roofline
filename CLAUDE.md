@@ -1,6 +1,6 @@
-# Nivaas: working rules for Claude Code
+# Roofline: working rules for Claude Code
 
-Nivaas is an original product built by adhikbuilds. CasaSetu is the reference we studied (docs/recon/), not something we copy:
+Roofline is an original product built by adhikbuilds. CasaSetu is the reference we studied (docs/recon/), not something we copy:
 never use their name, logo, copy, mascot or data in the product.
 
 ## Source of truth
@@ -32,7 +32,7 @@ plus a 390px-wide mobile shot. 5. `security-reviewer` when applicable. 6. `doc-u
   don't change these.
 - pnpm workspace, Node 24, TypeScript strict, Next.js 15 App Router, React 19, Tailwind v4, Drizzle, vitest, Playwright.
 - Secrets live in `.env.local` (gitignored); keep `.env.example` current. Never commit keys or real resumes/PII.
-- GitHub: `origin` = github.com/adhikbuilds/nivaas (private). The active gh account on this machine is a work account, so never run
+- GitHub: `origin` = github.com/adhikbuilds/roofline (private). The active gh account on this machine is a work account, so never run
   `gh auth switch`; scope commands with `GH_TOKEN=$(gh auth token -u adhikbuilds) gh ...`. Commits use the repo-local
   adhikbuilds noreply identity, and `git push` authenticates through a repo-local credential helper; both are already configured.
 
