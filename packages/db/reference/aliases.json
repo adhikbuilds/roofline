@@ -1,0 +1,546 @@
+[
+  {
+    "alias": "rajaji nagar",
+    "locality": "Rajajinagar"
+  },
+  {
+    "alias": "rajajinagara",
+    "locality": "Rajajinagar"
+  },
+  {
+    "alias": "kundanahalli",
+    "locality": "Kundalahalli"
+  },
+  {
+    "alias": "kundalahalli gate",
+    "locality": "Kundalahalli"
+  },
+  {
+    "alias": "ibbaluru",
+    "locality": "Iblur"
+  },
+  {
+    "alias": "iblur village",
+    "locality": "Iblur"
+  },
+  {
+    "alias": "channasandra whitefield",
+    "locality": "Whitefield"
+  },
+  {
+    "alias": "itpl",
+    "locality": "Whitefield"
+  },
+  {
+    "alias": "hope farm",
+    "locality": "Whitefield"
+  },
+  {
+    "alias": "whitefeild",
+    "locality": "Whitefield"
+  },
+  {
+    "alias": "whitefied",
+    "locality": "Whitefield"
+  },
+  {
+    "alias": "electronics city",
+    "locality": "Electronic City"
+  },
+  {
+    "alias": "e city",
+    "locality": "Electronic City"
+  },
+  {
+    "alias": "electronic city phase 1",
+    "locality": "Electronic City"
+  },
+  {
+    "alias": "electronic city phase 2",
+    "locality": "Electronic City"
+  },
+  {
+    "alias": "hsr",
+    "locality": "HSR Layout"
+  },
+  {
+    "alias": "hsr sector 2",
+    "locality": "HSR Layout"
+  },
+  {
+    "alias": "btm 2nd stage",
+    "locality": "BTM Layout"
+  },
+  {
+    "alias": "btm",
+    "locality": "BTM Layout"
+  },
+  {
+    "alias": "jp nagar 7th phase",
+    "locality": "JP Nagar"
+  },
+  {
+    "alias": "j p nagar",
+    "locality": "JP Nagar"
+  },
+  {
+    "alias": "rajarajeshwari nagar",
+    "locality": "RR Nagar"
+  },
+  {
+    "alias": "rajarajeshwarinagar",
+    "locality": "RR Nagar"
+  },
+  {
+    "alias": "krishnarajapuram",
+    "locality": "KR Puram"
+  },
+  {
+    "alias": "k r puram",
+    "locality": "KR Puram"
+  },
+  {
+    "alias": "basaweshwara nagar",
+    "locality": "Basaveshwara Nagar"
+  },
+  {
+    "alias": "basaveshwaranagar",
+    "locality": "Basaveshwara Nagar"
+  },
+  {
+    "alias": "halasuru",
+    "locality": "Ulsoor"
+  },
+  {
+    "alias": "ulsur",
+    "locality": "Ulsoor"
+  },
+  {
+    "alias": "c v raman nagar",
+    "locality": "CV Raman Nagar"
+  },
+  {
+    "alias": "cv raman nagr",
+    "locality": "CV Raman Nagar"
+  },
+  {
+    "alias": "doddakannelli",
+    "locality": "Sarjapur Road"
+  },
+  {
+    "alias": "wipro sarjapur road",
+    "locality": "Sarjapur Road"
+  },
+  {
+    "alias": "yelahanka new town",
+    "locality": "Yelahanka"
+  },
+  {
+    "alias": "yelahanka old town",
+    "locality": "Yelahanka"
+  },
+  {
+    "alias": "hebbal kempapura",
+    "locality": "Hebbal"
+  },
+  {
+    "alias": "hebbala",
+    "locality": "Hebbal"
+  },
+  {
+    "alias": "kengeri upanagara",
+    "locality": "Kengeri"
+  },
+  {
+    "alias": "kengeri satellite town",
+    "locality": "Kengeri"
+  },
+  {
+    "alias": "ramamurthi nagar",
+    "locality": "Ramamurthy Nagar"
+  },
+  {
+    "alias": "ramamurthynagar",
+    "locality": "Ramamurthy Nagar"
+  },
+  {
+    "alias": "bannerghatta road",
+    "locality": "Arekere"
+  },
+  {
+    "alias": "bannerghatta rd",
+    "locality": "Arekere"
+  },
+  {
+    "alias": "koramangla",
+    "locality": "Koramangala"
+  },
+  {
+    "alias": "koramangala 4th block",
+    "locality": "Koramangala"
+  },
+  {
+    "alias": "koramangala 5th block",
+    "locality": "Koramangala"
+  },
+  {
+    "alias": "indira nagar",
+    "locality": "Indiranagar"
+  },
+  {
+    "alias": "indiranagr",
+    "locality": "Indiranagar"
+  },
+  {
+    "alias": "marathalli",
+    "locality": "Marathahalli"
+  },
+  {
+    "alias": "marathahalli bridge",
+    "locality": "Marathahalli"
+  },
+  {
+    "alias": "bellandur outer ring road",
+    "locality": "Bellandur"
+  },
+  {
+    "alias": "bellandoor",
+    "locality": "Bellandur"
+  },
+  {
+    "alias": "jayanagar 4th block",
+    "locality": "Jayanagar"
+  },
+  {
+    "alias": "jaya nagar",
+    "locality": "Jayanagar"
+  },
+  {
+    "alias": "banashankari 2nd stage",
+    "locality": "Banashankari"
+  },
+  {
+    "alias": "banashankari 3rd stage",
+    "locality": "Banashankari"
+  },
+  {
+    "alias": "malleswaram",
+    "locality": "Malleshwaram"
+  },
+  {
+    "alias": "malleshwara",
+    "locality": "Malleshwaram"
+  },
+  {
+    "alias": "basavangudi",
+    "locality": "Basavanagudi"
+  },
+  {
+    "alias": "basavanagudi bull temple",
+    "locality": "Basavanagudi"
+  },
+  {
+    "alias": "yeshwantpur",
+    "locality": "Yeshwanthpur"
+  },
+  {
+    "alias": "yeshvantpur",
+    "locality": "Yeshwanthpur"
+  },
+  {
+    "alias": "brookfield",
+    "locality": "Brookefield"
+  },
+  {
+    "alias": "brooke field",
+    "locality": "Brookefield"
+  },
+  {
+    "alias": "mahadevpura",
+    "locality": "Mahadevapura"
+  },
+  {
+    "alias": "mahadevapura main road",
+    "locality": "Mahadevapura"
+  },
+  {
+    "alias": "vijaya nagar",
+    "locality": "Vijayanagar"
+  },
+  {
+    "alias": "vijayanagara",
+    "locality": "Vijayanagar"
+  },
+  {
+    "alias": "mahatma gandhi road",
+    "locality": "MG Road"
+  },
+  {
+    "alias": "m g road",
+    "locality": "MG Road"
+  },
+  {
+    "alias": "kamanahalli",
+    "locality": "Kammanahalli"
+  },
+  {
+    "alias": "kammanahalli main road",
+    "locality": "Kammanahalli"
+  },
+  {
+    "alias": "banasawadi",
+    "locality": "Banaswadi"
+  },
+  {
+    "alias": "banaswadi main road",
+    "locality": "Banaswadi"
+  },
+  {
+    "alias": "kalyannagar",
+    "locality": "Kalyan Nagar"
+  },
+  {
+    "alias": "kalyan nagr",
+    "locality": "Kalyan Nagar"
+  },
+  {
+    "alias": "thanisandra main road",
+    "locality": "Thanisandra"
+  },
+  {
+    "alias": "tanisandra",
+    "locality": "Thanisandra"
+  },
+  {
+    "alias": "hoodi circle",
+    "locality": "Hoodi"
+  },
+  {
+    "alias": "hoodi village",
+    "locality": "Hoodi"
+  },
+  {
+    "alias": "sahakarnagar",
+    "locality": "Sahakara Nagar"
+  },
+  {
+    "alias": "sahakaranagar",
+    "locality": "Sahakara Nagar"
+  },
+  {
+    "alias": "bommanhalli",
+    "locality": "Bommanahalli"
+  },
+  {
+    "alias": "bommanahalli hosur road",
+    "locality": "Bommanahalli"
+  },
+  {
+    "alias": "domlur 2nd stage",
+    "locality": "Domlur"
+  },
+  {
+    "alias": "domlur layout",
+    "locality": "Domlur"
+  },
+  {
+    "alias": "murugesh palya",
+    "locality": "Murugeshpalya"
+  },
+  {
+    "alias": "murgeshpalya",
+    "locality": "Murugeshpalya"
+  },
+  {
+    "alias": "kaggadasapura main road",
+    "locality": "Kaggadasapura"
+  },
+  {
+    "alias": "kagdasapura",
+    "locality": "Kaggadasapura"
+  },
+  {
+    "alias": "panathur main road",
+    "locality": "Panathur"
+  },
+  {
+    "alias": "panatur",
+    "locality": "Panathur"
+  },
+  {
+    "alias": "haralur road",
+    "locality": "Haralur"
+  },
+  {
+    "alias": "haralur main road",
+    "locality": "Haralur"
+  },
+  {
+    "alias": "varthur main road",
+    "locality": "Varthur"
+  },
+  {
+    "alias": "varthur kodi",
+    "locality": "Varthur"
+  },
+  {
+    "alias": "horamavu agara",
+    "locality": "Horamavu"
+  },
+  {
+    "alias": "horamavu main road",
+    "locality": "Horamavu"
+  },
+  {
+    "alias": "hennur main road",
+    "locality": "Hennur"
+  },
+  {
+    "alias": "hennur bande",
+    "locality": "Hennur"
+  },
+  {
+    "alias": "malleshwaram 18th cross",
+    "locality": "Malleshwaram"
+  },
+  {
+    "alias": "indiranagar 2nd stage",
+    "locality": "Indiranagar"
+  },
+  {
+    "alias": "koramangala 8th block",
+    "locality": "Koramangala"
+  },
+  {
+    "alias": "sarjapur main road",
+    "locality": "Sarjapur Road"
+  },
+  {
+    "alias": "ecity",
+    "locality": "Electronic City"
+  },
+  {
+    "alias": "hsr sector 6",
+    "locality": "HSR Layout"
+  },
+  {
+    "alias": "kasavanahalli main road",
+    "locality": "Kasavanahalli"
+  },
+  {
+    "alias": "kasavanhalli",
+    "locality": "Kasavanahalli"
+  },
+  {
+    "alias": "hosa rd",
+    "locality": "Hosa Road"
+  },
+  {
+    "alias": "hosur road hosa road",
+    "locality": "Hosa Road"
+  },
+  {
+    "alias": "bommasandra industrial area",
+    "locality": "Bommasandra"
+  },
+  {
+    "alias": "bomasandra",
+    "locality": "Bommasandra"
+  },
+  {
+    "alias": "jigani industrial area",
+    "locality": "Jigani"
+  },
+  {
+    "alias": "jigni",
+    "locality": "Jigani"
+  },
+  {
+    "alias": "begur road",
+    "locality": "Begur"
+  },
+  {
+    "alias": "begur village",
+    "locality": "Begur"
+  },
+  {
+    "alias": "peenya industrial area",
+    "locality": "Peenya"
+  },
+  {
+    "alias": "peenya 2nd stage",
+    "locality": "Peenya"
+  },
+  {
+    "alias": "jalahalli west",
+    "locality": "Jalahalli"
+  },
+  {
+    "alias": "jalahalli cross",
+    "locality": "Jalahalli"
+  },
+  {
+    "alias": "mathikere main road",
+    "locality": "Mathikere"
+  },
+  {
+    "alias": "mathikere extension",
+    "locality": "Mathikere"
+  },
+  {
+    "alias": "jakkur layout",
+    "locality": "Jakkur"
+  },
+  {
+    "alias": "jakur",
+    "locality": "Jakkur"
+  },
+  {
+    "alias": "nagarbhavi 2nd stage",
+    "locality": "Nagarbhavi"
+  },
+  {
+    "alias": "nagarabhavi",
+    "locality": "Nagarbhavi"
+  },
+  {
+    "alias": "kadugodi main road",
+    "locality": "Kadugodi"
+  },
+  {
+    "alias": "kadugodi plantation",
+    "locality": "Kadugodi"
+  },
+  {
+    "alias": "fraser town",
+    "locality": "Frazer Town"
+  },
+  {
+    "alias": "frazer twn",
+    "locality": "Frazer Town"
+  },
+  {
+    "alias": "richmond rd",
+    "locality": "Richmond Town"
+  },
+  {
+    "alias": "richmond twn",
+    "locality": "Richmond Town"
+  },
+  {
+    "alias": "wilsongarden",
+    "locality": "Wilson Garden"
+  },
+  {
+    "alias": "wilson garden main road",
+    "locality": "Wilson Garden"
+  },
+  {
+    "alias": "sadashiv nagar",
+    "locality": "Sadashivanagar"
+  },
+  {
+    "alias": "sadashivnagar",
+    "locality": "Sadashivanagar"
+  }
+]

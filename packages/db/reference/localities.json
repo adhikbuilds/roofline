@@ -1,0 +1,623 @@
+[
+  {
+    "name": "MG Road",
+    "slug": "mg-road",
+    "zone": "central",
+    "lat": 12.9756,
+    "lng": 77.6067,
+    "radiusM": 800,
+    "base2bhkHint": 55000
+  },
+  {
+    "name": "Richmond Town",
+    "slug": "richmond-town",
+    "zone": "central",
+    "lat": 12.965,
+    "lng": 77.6,
+    "radiusM": 800,
+    "base2bhkHint": 50000
+  },
+  {
+    "name": "Shivajinagar",
+    "slug": "shivajinagar",
+    "zone": "central",
+    "lat": 12.9857,
+    "lng": 77.605,
+    "radiusM": 800,
+    "base2bhkHint": 32000
+  },
+  {
+    "name": "Frazer Town",
+    "slug": "frazer-town",
+    "zone": "central",
+    "lat": 12.9986,
+    "lng": 77.615,
+    "radiusM": 1000,
+    "base2bhkHint": 36000
+  },
+  {
+    "name": "Ulsoor",
+    "slug": "ulsoor",
+    "zone": "central",
+    "lat": 12.981,
+    "lng": 77.62,
+    "radiusM": 800,
+    "base2bhkHint": 42000
+  },
+  {
+    "name": "Sadashivanagar",
+    "slug": "sadashivanagar",
+    "zone": "central",
+    "lat": 13.007,
+    "lng": 77.58,
+    "radiusM": 1000,
+    "base2bhkHint": 60000
+  },
+  {
+    "name": "Malleshwaram",
+    "slug": "malleshwaram",
+    "zone": "central",
+    "lat": 13.0035,
+    "lng": 77.5709,
+    "radiusM": 1200,
+    "base2bhkHint": 34000
+  },
+  {
+    "name": "Wilson Garden",
+    "slug": "wilson-garden",
+    "zone": "central",
+    "lat": 12.948,
+    "lng": 77.597,
+    "radiusM": 800,
+    "base2bhkHint": 30000
+  },
+  {
+    "name": "Indiranagar",
+    "slug": "indiranagar",
+    "zone": "east",
+    "lat": 12.9784,
+    "lng": 77.6408,
+    "radiusM": 1400,
+    "base2bhkHint": 48000
+  },
+  {
+    "name": "Domlur",
+    "slug": "domlur",
+    "zone": "east",
+    "lat": 12.961,
+    "lng": 77.6387,
+    "radiusM": 900,
+    "base2bhkHint": 40000
+  },
+  {
+    "name": "Murugeshpalya",
+    "slug": "murugeshpalya",
+    "zone": "east",
+    "lat": 12.958,
+    "lng": 77.656,
+    "radiusM": 800,
+    "base2bhkHint": 34000
+  },
+  {
+    "name": "CV Raman Nagar",
+    "slug": "cv-raman-nagar",
+    "zone": "east",
+    "lat": 12.985,
+    "lng": 77.663,
+    "radiusM": 1200,
+    "base2bhkHint": 30000
+  },
+  {
+    "name": "Kaggadasapura",
+    "slug": "kaggadasapura",
+    "zone": "east",
+    "lat": 12.983,
+    "lng": 77.68,
+    "radiusM": 900,
+    "base2bhkHint": 27000
+  },
+  {
+    "name": "Marathahalli",
+    "slug": "marathahalli",
+    "zone": "east",
+    "lat": 12.9591,
+    "lng": 77.6974,
+    "radiusM": 1400,
+    "base2bhkHint": 30000
+  },
+  {
+    "name": "Brookefield",
+    "slug": "brookefield",
+    "zone": "east",
+    "lat": 12.9667,
+    "lng": 77.7167,
+    "radiusM": 1000,
+    "base2bhkHint": 32000
+  },
+  {
+    "name": "Kundalahalli",
+    "slug": "kundalahalli",
+    "zone": "east",
+    "lat": 12.9585,
+    "lng": 77.7148,
+    "radiusM": 900,
+    "base2bhkHint": 31000
+  },
+  {
+    "name": "Whitefield",
+    "slug": "whitefield",
+    "zone": "east",
+    "lat": 12.9698,
+    "lng": 77.75,
+    "radiusM": 2000,
+    "base2bhkHint": 32000
+  },
+  {
+    "name": "Hoodi",
+    "slug": "hoodi",
+    "zone": "east",
+    "lat": 12.9915,
+    "lng": 77.716,
+    "radiusM": 1000,
+    "base2bhkHint": 26000
+  },
+  {
+    "name": "Mahadevapura",
+    "slug": "mahadevapura",
+    "zone": "east",
+    "lat": 12.99,
+    "lng": 77.693,
+    "radiusM": 1200,
+    "base2bhkHint": 27000
+  },
+  {
+    "name": "KR Puram",
+    "slug": "kr-puram",
+    "zone": "east",
+    "lat": 13.0076,
+    "lng": 77.695,
+    "radiusM": 1400,
+    "base2bhkHint": 22000
+  },
+  {
+    "name": "Kadugodi",
+    "slug": "kadugodi",
+    "zone": "east",
+    "lat": 12.997,
+    "lng": 77.76,
+    "radiusM": 1400,
+    "base2bhkHint": 22000
+  },
+  {
+    "name": "Varthur",
+    "slug": "varthur",
+    "zone": "east",
+    "lat": 12.9406,
+    "lng": 77.7469,
+    "radiusM": 1600,
+    "base2bhkHint": 25000
+  },
+  {
+    "name": "Panathur",
+    "slug": "panathur",
+    "zone": "east",
+    "lat": 12.938,
+    "lng": 77.716,
+    "radiusM": 1000,
+    "base2bhkHint": 27000
+  },
+  {
+    "name": "Bellandur",
+    "slug": "bellandur",
+    "zone": "east",
+    "lat": 12.9304,
+    "lng": 77.6784,
+    "radiusM": 1400,
+    "base2bhkHint": 36000
+  },
+  {
+    "name": "Kasavanahalli",
+    "slug": "kasavanahalli",
+    "zone": "east",
+    "lat": 12.903,
+    "lng": 77.677,
+    "radiusM": 1000,
+    "base2bhkHint": 30000
+  },
+  {
+    "name": "Iblur",
+    "slug": "iblur",
+    "zone": "east",
+    "lat": 12.922,
+    "lng": 77.663,
+    "radiusM": 800,
+    "base2bhkHint": 33000
+  },
+  {
+    "name": "Sarjapur Road",
+    "slug": "sarjapur-road",
+    "zone": "east",
+    "lat": 12.912,
+    "lng": 77.696,
+    "radiusM": 1600,
+    "base2bhkHint": 33000
+  },
+  {
+    "name": "Haralur",
+    "slug": "haralur",
+    "zone": "east",
+    "lat": 12.907,
+    "lng": 77.664,
+    "radiusM": 1000,
+    "base2bhkHint": 31000
+  },
+  {
+    "name": "Sarjapur",
+    "slug": "sarjapur",
+    "zone": "east",
+    "lat": 12.86,
+    "lng": 77.786,
+    "radiusM": 2000,
+    "base2bhkHint": 20000
+  },
+  {
+    "name": "Koramangala",
+    "slug": "koramangala",
+    "zone": "south_east",
+    "lat": 12.9352,
+    "lng": 77.6245,
+    "radiusM": 1600,
+    "base2bhkHint": 42000
+  },
+  {
+    "name": "HSR Layout",
+    "slug": "hsr-layout",
+    "zone": "south_east",
+    "lat": 12.9116,
+    "lng": 77.6474,
+    "radiusM": 1600,
+    "base2bhkHint": 38000
+  },
+  {
+    "name": "BTM Layout",
+    "slug": "btm-layout",
+    "zone": "south_east",
+    "lat": 12.9166,
+    "lng": 77.6101,
+    "radiusM": 1400,
+    "base2bhkHint": 27000
+  },
+  {
+    "name": "Bommanahalli",
+    "slug": "bommanahalli",
+    "zone": "south_east",
+    "lat": 12.903,
+    "lng": 77.624,
+    "radiusM": 1000,
+    "base2bhkHint": 22000
+  },
+  {
+    "name": "Electronic City",
+    "slug": "electronic-city",
+    "zone": "south_east",
+    "lat": 12.8452,
+    "lng": 77.6602,
+    "radiusM": 2000,
+    "base2bhkHint": 20000
+  },
+  {
+    "name": "Hosa Road",
+    "slug": "hosa-road",
+    "zone": "south_east",
+    "lat": 12.878,
+    "lng": 77.66,
+    "radiusM": 1000,
+    "base2bhkHint": 21000
+  },
+  {
+    "name": "Begur",
+    "slug": "begur",
+    "zone": "south_east",
+    "lat": 12.879,
+    "lng": 77.63,
+    "radiusM": 1200,
+    "base2bhkHint": 20000
+  },
+  {
+    "name": "Bommasandra",
+    "slug": "bommasandra",
+    "zone": "south_east",
+    "lat": 12.817,
+    "lng": 77.695,
+    "radiusM": 1600,
+    "base2bhkHint": 15000
+  },
+  {
+    "name": "Jigani",
+    "slug": "jigani",
+    "zone": "south_east",
+    "lat": 12.786,
+    "lng": 77.64,
+    "radiusM": 1600,
+    "base2bhkHint": 14000
+  },
+  {
+    "name": "Jayanagar",
+    "slug": "jayanagar",
+    "zone": "south",
+    "lat": 12.925,
+    "lng": 77.5938,
+    "radiusM": 1600,
+    "base2bhkHint": 34000
+  },
+  {
+    "name": "JP Nagar",
+    "slug": "jp-nagar",
+    "zone": "south",
+    "lat": 12.9063,
+    "lng": 77.5857,
+    "radiusM": 1800,
+    "base2bhkHint": 30000
+  },
+  {
+    "name": "Basavanagudi",
+    "slug": "basavanagudi",
+    "zone": "south",
+    "lat": 12.9406,
+    "lng": 77.5738,
+    "radiusM": 1200,
+    "base2bhkHint": 32000
+  },
+  {
+    "name": "Banashankari",
+    "slug": "banashankari",
+    "zone": "south",
+    "lat": 12.9255,
+    "lng": 77.5468,
+    "radiusM": 1600,
+    "base2bhkHint": 24000
+  },
+  {
+    "name": "Kumaraswamy Layout",
+    "slug": "kumaraswamy-layout",
+    "zone": "south",
+    "lat": 12.908,
+    "lng": 77.562,
+    "radiusM": 1000,
+    "base2bhkHint": 22000
+  },
+  {
+    "name": "Uttarahalli",
+    "slug": "uttarahalli",
+    "zone": "south",
+    "lat": 12.905,
+    "lng": 77.545,
+    "radiusM": 1200,
+    "base2bhkHint": 19000
+  },
+  {
+    "name": "Arekere",
+    "slug": "arekere",
+    "zone": "south",
+    "lat": 12.885,
+    "lng": 77.602,
+    "radiusM": 1400,
+    "base2bhkHint": 25000
+  },
+  {
+    "name": "Bilekahalli",
+    "slug": "bilekahalli",
+    "zone": "south",
+    "lat": 12.896,
+    "lng": 77.605,
+    "radiusM": 1000,
+    "base2bhkHint": 26000
+  },
+  {
+    "name": "RR Nagar",
+    "slug": "rr-nagar",
+    "zone": "south",
+    "lat": 12.927,
+    "lng": 77.517,
+    "radiusM": 1600,
+    "base2bhkHint": 20000
+  },
+  {
+    "name": "Kengeri",
+    "slug": "kengeri",
+    "zone": "south",
+    "lat": 12.908,
+    "lng": 77.483,
+    "radiusM": 1600,
+    "base2bhkHint": 16000
+  },
+  {
+    "name": "Vijayanagar",
+    "slug": "vijayanagar",
+    "zone": "west",
+    "lat": 12.9719,
+    "lng": 77.535,
+    "radiusM": 1400,
+    "base2bhkHint": 26000
+  },
+  {
+    "name": "Nagarbhavi",
+    "slug": "nagarbhavi",
+    "zone": "west",
+    "lat": 12.96,
+    "lng": 77.51,
+    "radiusM": 1400,
+    "base2bhkHint": 20000
+  },
+  {
+    "name": "Rajajinagar",
+    "slug": "rajajinagar",
+    "zone": "west",
+    "lat": 12.991,
+    "lng": 77.5525,
+    "radiusM": 1400,
+    "base2bhkHint": 30000
+  },
+  {
+    "name": "Basaveshwara Nagar",
+    "slug": "basaveshwara-nagar",
+    "zone": "west",
+    "lat": 12.99,
+    "lng": 77.538,
+    "radiusM": 1000,
+    "base2bhkHint": 26000
+  },
+  {
+    "name": "Yeshwanthpur",
+    "slug": "yeshwanthpur",
+    "zone": "west",
+    "lat": 13.0285,
+    "lng": 77.54,
+    "radiusM": 1200,
+    "base2bhkHint": 28000
+  },
+  {
+    "name": "Peenya",
+    "slug": "peenya",
+    "zone": "west",
+    "lat": 13.028,
+    "lng": 77.519,
+    "radiusM": 1400,
+    "base2bhkHint": 18000
+  },
+  {
+    "name": "Mathikere",
+    "slug": "mathikere",
+    "zone": "west",
+    "lat": 13.033,
+    "lng": 77.564,
+    "radiusM": 900,
+    "base2bhkHint": 24000
+  },
+  {
+    "name": "Jalahalli",
+    "slug": "jalahalli",
+    "zone": "west",
+    "lat": 13.045,
+    "lng": 77.548,
+    "radiusM": 1200,
+    "base2bhkHint": 20000
+  },
+  {
+    "name": "Hebbal",
+    "slug": "hebbal",
+    "zone": "north",
+    "lat": 13.0358,
+    "lng": 77.597,
+    "radiusM": 1400,
+    "base2bhkHint": 36000
+  },
+  {
+    "name": "RT Nagar",
+    "slug": "rt-nagar",
+    "zone": "north",
+    "lat": 13.0213,
+    "lng": 77.596,
+    "radiusM": 1000,
+    "base2bhkHint": 28000
+  },
+  {
+    "name": "Sahakara Nagar",
+    "slug": "sahakara-nagar",
+    "zone": "north",
+    "lat": 13.062,
+    "lng": 77.587,
+    "radiusM": 1200,
+    "base2bhkHint": 28000
+  },
+  {
+    "name": "Yelahanka",
+    "slug": "yelahanka",
+    "zone": "north",
+    "lat": 13.1005,
+    "lng": 77.5963,
+    "radiusM": 2000,
+    "base2bhkHint": 22000
+  },
+  {
+    "name": "Vidyaranyapura",
+    "slug": "vidyaranyapura",
+    "zone": "north",
+    "lat": 13.077,
+    "lng": 77.559,
+    "radiusM": 1200,
+    "base2bhkHint": 20000
+  },
+  {
+    "name": "Jakkur",
+    "slug": "jakkur",
+    "zone": "north",
+    "lat": 13.078,
+    "lng": 77.606,
+    "radiusM": 1000,
+    "base2bhkHint": 26000
+  },
+  {
+    "name": "Thanisandra",
+    "slug": "thanisandra",
+    "zone": "north",
+    "lat": 13.056,
+    "lng": 77.633,
+    "radiusM": 1400,
+    "base2bhkHint": 28000
+  },
+  {
+    "name": "Hennur",
+    "slug": "hennur",
+    "zone": "north_east",
+    "lat": 13.04,
+    "lng": 77.64,
+    "radiusM": 1200,
+    "base2bhkHint": 27000
+  },
+  {
+    "name": "Kalyan Nagar",
+    "slug": "kalyan-nagar",
+    "zone": "north_east",
+    "lat": 13.028,
+    "lng": 77.64,
+    "radiusM": 1000,
+    "base2bhkHint": 30000
+  },
+  {
+    "name": "Banaswadi",
+    "slug": "banaswadi",
+    "zone": "north_east",
+    "lat": 13.0141,
+    "lng": 77.6518,
+    "radiusM": 1000,
+    "base2bhkHint": 26000
+  },
+  {
+    "name": "Kammanahalli",
+    "slug": "kammanahalli",
+    "zone": "north_east",
+    "lat": 13.015,
+    "lng": 77.638,
+    "radiusM": 1000,
+    "base2bhkHint": 28000
+  },
+  {
+    "name": "Ramamurthy Nagar",
+    "slug": "ramamurthy-nagar",
+    "zone": "north_east",
+    "lat": 13.012,
+    "lng": 77.677,
+    "radiusM": 1200,
+    "base2bhkHint": 22000
+  },
+  {
+    "name": "Horamavu",
+    "slug": "horamavu",
+    "zone": "north_east",
+    "lat": 13.027,
+    "lng": 77.66,
+    "radiusM": 1200,
+    "base2bhkHint": 24000
+  }
+]

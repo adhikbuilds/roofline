@@ -37,7 +37,24 @@ if (!connectionString) {
 }
 const DSN: string = connectionString;
 
-const isLocalHost = /@(localhost|127\.0\.0\.1|\[::1\])[:/]/.test(DSN);
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]', '::1']);
+
+/**
+ * True only when the URL's host, and any libpq ?host= / ?hostaddr= override, is loopback.
+ * Parsed rather than pattern-matched so "localhost" in a password or query string can't pass.
+ */
+export function isLocalUrl(url: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return false;
+  }
+  const overrides = [...parsed.searchParams.getAll('host'), ...parsed.searchParams.getAll('hostaddr')];
+  return LOCAL_HOSTS.has(parsed.hostname) && overrides.every((h) => LOCAL_HOSTS.has(h));
+}
+
+const isLocalHost = isLocalUrl(DSN);
 
 export const pool = new Pool({
   connectionString: DSN,
@@ -69,6 +86,26 @@ export async function withUser<T>(
     await client.query('BEGIN');
     await client.query('SET LOCAL ROLE roofline_app');
     await client.query('SELECT set_config($1, $2, true)', ['roofline.user_id', userId]);
+    const result = await fn(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Public reads for the web app: a read-only transaction as `roofline_app`, so grants (no raw_listings,
+ * no seed_truth) and later RLS apply to every page query.
+ */
+export async function withReadOnly<T>(fn: (client: PoolClient) => Promise<T>): Promise<T> {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN READ ONLY');
+    await client.query('SET LOCAL ROLE roofline_app');
     const result = await fn(client);
     await client.query('COMMIT');
     return result;

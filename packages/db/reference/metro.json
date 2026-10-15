@@ -1,0 +1,346 @@
+{
+  "stations": [
+    {
+      "name": "Kengeri",
+      "line": "purple",
+      "seq": 1,
+      "lat": 12.9077,
+      "lng": 77.487,
+      "status": "operational"
+    },
+    {
+      "name": "Mysore Road",
+      "line": "purple",
+      "seq": 2,
+      "lat": 12.9466,
+      "lng": 77.53,
+      "status": "operational"
+    },
+    {
+      "name": "Vijayanagar",
+      "line": "purple",
+      "seq": 3,
+      "lat": 12.971,
+      "lng": 77.537,
+      "status": "operational"
+    },
+    {
+      "name": "Magadi Road",
+      "line": "purple",
+      "seq": 4,
+      "lat": 12.9757,
+      "lng": 77.555,
+      "status": "operational"
+    },
+    {
+      "name": "Majestic",
+      "line": "purple",
+      "seq": 5,
+      "lat": 12.9757,
+      "lng": 77.5728,
+      "status": "operational"
+    },
+    {
+      "name": "Vidhana Soudha",
+      "line": "purple",
+      "seq": 6,
+      "lat": 12.9797,
+      "lng": 77.5907,
+      "status": "operational"
+    },
+    {
+      "name": "MG Road",
+      "line": "purple",
+      "seq": 7,
+      "lat": 12.9755,
+      "lng": 77.6066,
+      "status": "operational"
+    },
+    {
+      "name": "Halasuru",
+      "line": "purple",
+      "seq": 8,
+      "lat": 12.976,
+      "lng": 77.6265,
+      "status": "operational"
+    },
+    {
+      "name": "Indiranagar",
+      "line": "purple",
+      "seq": 9,
+      "lat": 12.9784,
+      "lng": 77.6386,
+      "status": "operational"
+    },
+    {
+      "name": "Baiyappanahalli",
+      "line": "purple",
+      "seq": 10,
+      "lat": 12.9907,
+      "lng": 77.6526,
+      "status": "operational"
+    },
+    {
+      "name": "KR Puram",
+      "line": "purple",
+      "seq": 11,
+      "lat": 13,
+      "lng": 77.675,
+      "status": "operational"
+    },
+    {
+      "name": "Hoodi",
+      "line": "purple",
+      "seq": 12,
+      "lat": 12.9888,
+      "lng": 77.7114,
+      "status": "operational"
+    },
+    {
+      "name": "Kundalahalli",
+      "line": "purple",
+      "seq": 13,
+      "lat": 12.9776,
+      "lng": 77.7158,
+      "status": "operational"
+    },
+    {
+      "name": "Pattandur Agrahara",
+      "line": "purple",
+      "seq": 14,
+      "lat": 12.9877,
+      "lng": 77.738,
+      "status": "operational"
+    },
+    {
+      "name": "Whitefield (Kadugodi)",
+      "line": "purple",
+      "seq": 15,
+      "lat": 12.9956,
+      "lng": 77.7577,
+      "status": "operational"
+    },
+    {
+      "name": "Nagasandra",
+      "line": "green",
+      "seq": 1,
+      "lat": 13.048,
+      "lng": 77.5,
+      "status": "operational"
+    },
+    {
+      "name": "Jalahalli",
+      "line": "green",
+      "seq": 2,
+      "lat": 13.0394,
+      "lng": 77.5198,
+      "status": "operational"
+    },
+    {
+      "name": "Peenya",
+      "line": "green",
+      "seq": 3,
+      "lat": 13.0331,
+      "lng": 77.5332,
+      "status": "operational"
+    },
+    {
+      "name": "Yeshwanthpur",
+      "line": "green",
+      "seq": 4,
+      "lat": 13.0233,
+      "lng": 77.55,
+      "status": "operational"
+    },
+    {
+      "name": "Rajajinagar",
+      "line": "green",
+      "seq": 5,
+      "lat": 13.0005,
+      "lng": 77.5496,
+      "status": "operational"
+    },
+    {
+      "name": "Mantri Square Sampige Road",
+      "line": "green",
+      "seq": 6,
+      "lat": 12.9907,
+      "lng": 77.5707,
+      "status": "operational"
+    },
+    {
+      "name": "Majestic",
+      "line": "green",
+      "seq": 7,
+      "lat": 12.9757,
+      "lng": 77.5728,
+      "status": "operational"
+    },
+    {
+      "name": "KR Market",
+      "line": "green",
+      "seq": 8,
+      "lat": 12.961,
+      "lng": 77.5746,
+      "status": "operational"
+    },
+    {
+      "name": "Lalbagh",
+      "line": "green",
+      "seq": 9,
+      "lat": 12.9465,
+      "lng": 77.58,
+      "status": "operational"
+    },
+    {
+      "name": "Jayanagar",
+      "line": "green",
+      "seq": 10,
+      "lat": 12.9295,
+      "lng": 77.5801,
+      "status": "operational"
+    },
+    {
+      "name": "RV Road",
+      "line": "green",
+      "seq": 11,
+      "lat": 12.9216,
+      "lng": 77.5802,
+      "status": "operational"
+    },
+    {
+      "name": "Banashankari",
+      "line": "green",
+      "seq": 12,
+      "lat": 12.9152,
+      "lng": 77.5736,
+      "status": "operational"
+    },
+    {
+      "name": "JP Nagar",
+      "line": "green",
+      "seq": 13,
+      "lat": 12.9073,
+      "lng": 77.5731,
+      "status": "operational"
+    },
+    {
+      "name": "Yelachenahalli",
+      "line": "green",
+      "seq": 14,
+      "lat": 12.8961,
+      "lng": 77.5701,
+      "status": "operational"
+    },
+    {
+      "name": "Silk Institute",
+      "line": "green",
+      "seq": 15,
+      "lat": 12.8618,
+      "lng": 77.53,
+      "status": "operational"
+    },
+    {
+      "name": "RV Road",
+      "line": "yellow",
+      "seq": 1,
+      "lat": 12.9216,
+      "lng": 77.5802,
+      "status": "operational"
+    },
+    {
+      "name": "Jayadeva Hospital",
+      "line": "yellow",
+      "seq": 2,
+      "lat": 12.918,
+      "lng": 77.5995,
+      "status": "operational"
+    },
+    {
+      "name": "BTM Layout",
+      "line": "yellow",
+      "seq": 3,
+      "lat": 12.9165,
+      "lng": 77.6105,
+      "status": "operational"
+    },
+    {
+      "name": "Central Silk Board",
+      "line": "yellow",
+      "seq": 4,
+      "lat": 12.9175,
+      "lng": 77.623,
+      "status": "operational"
+    },
+    {
+      "name": "Hongasandra",
+      "line": "yellow",
+      "seq": 5,
+      "lat": 12.899,
+      "lng": 77.629,
+      "status": "operational"
+    },
+    {
+      "name": "Kudlu Gate",
+      "line": "yellow",
+      "seq": 6,
+      "lat": 12.892,
+      "lng": 77.64,
+      "status": "operational"
+    },
+    {
+      "name": "Hosa Road",
+      "line": "yellow",
+      "seq": 7,
+      "lat": 12.877,
+      "lng": 77.656,
+      "status": "operational"
+    },
+    {
+      "name": "Electronic City",
+      "line": "yellow",
+      "seq": 8,
+      "lat": 12.848,
+      "lng": 77.668,
+      "status": "operational"
+    },
+    {
+      "name": "Hebbagodi",
+      "line": "yellow",
+      "seq": 9,
+      "lat": 12.823,
+      "lng": 77.688,
+      "status": "operational"
+    },
+    {
+      "name": "Bommasandra",
+      "line": "yellow",
+      "seq": 10,
+      "lat": 12.815,
+      "lng": 77.695,
+      "status": "operational"
+    }
+  ],
+  "interchanges": [
+    {
+      "station": "Majestic",
+      "lines": [
+        "purple",
+        "green"
+      ],
+      "minutes": 6
+    },
+    {
+      "station": "RV Road",
+      "lines": [
+        "green",
+        "yellow"
+      ],
+      "minutes": 6
+    }
+  ],
+  "plannedLines": [
+    "pink",
+    "blue"
+  ]
+}

@@ -5,10 +5,18 @@
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./seed-truth": "./src/schema/seed-truth.ts",
+    "./load-reference": "./src/load-reference.ts",
+    "./queries/locality": "./src/queries/locality.ts",
+    "./migrator": "./src/migrator.ts"
+  },
   "scripts": {
     "migrate": "vite-node src/migrate.ts",
     "reset": "vite-node src/reset.ts",
     "check-drift": "vite-node src/check-drift.ts",
+    "load-reference": "vite-node src/load-reference.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

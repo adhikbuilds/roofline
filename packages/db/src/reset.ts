@@ -1,8 +1,8 @@
 /** Drop and recreate the public and seed_truth schemas. Local development only. `pnpm db:reset` */
-import { withAdmin, close } from './client.js';
+import { withAdmin, close, isLocalUrl } from './client.js';
 
 const url = process.env['DATABASE_URL'] ?? '';
-const isLocal = url.includes('localhost') || url.includes('127.0.0.1');
+const isLocal = isLocalUrl(url);
 
 async function main(): Promise<void> {
   if (!isLocal) {

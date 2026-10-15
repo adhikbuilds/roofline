@@ -1,0 +1,294 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`synthetic generator: scale and determinism > first 5 rows and aggregate counts are stable (snapshot) > aggregates 1`] = `
+{
+  "deals": 82,
+  "defects": {
+    "area_huge": 7,
+    "area_zero": 8,
+    "empty_locality_geo": 20,
+    "furnishing_invalid": 25,
+    "geo_zero": 10,
+    "hard_negative": 150,
+    "locality_bangalore_geo": 6,
+    "locality_bangalore_nogeo": 9,
+    "locality_from_geo": 15,
+    "locality_from_nogeo": 25,
+    "rent_annual": 20,
+    "rent_lakh": 15,
+    "rent_one": 30,
+    "too_good": 10,
+  },
+  "flatUnits": 4250,
+  "hardNegatives": 150,
+  "pgUnits": 1101,
+  "priceChanges": 1322,
+  "rows": 6592,
+  "rowsBySource": {
+    "doorvale": 1362,
+    "hearthgrid": 296,
+    "keyloft": 976,
+    "nestlane": 2145,
+    "rentbarn": 1813,
+  },
+  "rowsPerUnit": {
+    "1": 4295,
+    "2": 871,
+    "3": 185,
+  },
+  "tooGood": 10,
+  "units": 5351,
+}
+`;
+
+exports[`synthetic generator: scale and determinism > first 5 rows and aggregate counts are stable (snapshot) > first-5-rows 1`] = `
+[
+  {
+    "id": "jc-000001",
+    "src": "doorvale",
+    "v0": {
+      "areaText": "1813 sqft",
+      "bhkText": "3BHK",
+      "depositText": "5 months",
+      "description": "Reserved parking and round-the-clock security. Floor: 7/10; Facing: north west; Parking: bike & car.",
+      "furnishingText": "Semi-Furnished",
+      "lat": 12.975657,
+      "lng": 77.61899,
+      "localityText": "Ulsoor Sector 3",
+      "photos": [
+        {
+          "dhash": "c6ff021de3f4f8a7",
+          "seed": "u0-0",
+        },
+        {
+          "dhash": "2e5c80d05b9f80f5",
+          "seed": "u0-1",
+        },
+        {
+          "dhash": "1f13f79f470d6d4b",
+          "seed": "u0-2",
+        },
+        {
+          "dhash": "d6d9e7c5847f852b",
+          "seed": "u0-3",
+        },
+        {
+          "dhash": "1c38d488a610d951",
+          "seed": "u0-4",
+        },
+        {
+          "dhash": "7bc877655db0f2e2",
+          "seed": "u0-5",
+        },
+        {
+          "dhash": "3f5382e207d9c215",
+          "seed": "u0-6",
+        },
+      ],
+      "postedAt": "2026-04-07T00:00:00.000Z",
+      "rentText": "70,500/-",
+      "sourceListingId": "jc-000001",
+      "tags": [
+        "Corporation water",
+        "Power backup",
+        "Lift",
+        "Gated",
+      ],
+      "title": "3 BHK apartment available in Ulsoor",
+    },
+  },
+  {
+    "id": "bn-000001",
+    "src": "rentbarn",
+    "v0": {
+      "areaText": "1,861 sq.ft",
+      "bhkText": "3 BHK",
+      "description": "Well maintained home close to markets and transit. Floor: 7/10; Facing: north west; Parking: bike & car.",
+      "furnishingText": "SF",
+      "lat": 12.975185,
+      "lng": 77.618982,
+      "localityText": "Ulsoor",
+      "maintenanceText": "₹5,500",
+      "photos": [
+        {
+          "dhash": "395382e207d9c215",
+          "seed": "u0-6",
+        },
+        {
+          "dhash": "96d9e7c5847f8523",
+          "seed": "u0-3",
+        },
+        {
+          "dhash": "2e7c80d04b8780f5",
+          "seed": "u0-1",
+        },
+        {
+          "dhash": "7bc877655db0f2e0",
+          "seed": "u0-5",
+        },
+        {
+          "dhash": "c6bf021debf4faa7",
+          "seed": "u0-0",
+        },
+        {
+          "dhash": "1f13f79f470d6d4b",
+          "seed": "u0-2",
+        },
+        {
+          "dhash": "1c38d488ae10d951",
+          "seed": "u0-4",
+        },
+        {
+          "dhash": "e40eb314ae1e571d",
+          "seed": "u0-x17",
+        },
+        {
+          "dhash": "c1861ebca7902105",
+          "seed": "u0-x18",
+        },
+      ],
+      "postedAt": "2026-04-06T00:00:00.000Z",
+      "rentText": "67K",
+      "sourceListingId": "bn-000001",
+      "tags": [
+        "Corporation water",
+        "Power backup",
+        "Gated",
+      ],
+      "title": "3 BHK apartment available in Ulsoor",
+    },
+  },
+  {
+    "id": "tm-000001",
+    "src": "nestlane",
+    "v0": {
+      "areaText": "173 sqm",
+      "bhkText": "3BHK",
+      "depositText": "6 months",
+      "description": "Reserved parking and round-the-clock security. Floor: 7/10; Facing: north west; Parking: bike & car.",
+      "furnishingText": "Semi-Furnished",
+      "lat": 12.975498,
+      "lng": 77.619541,
+      "localityText": "Ulsoor",
+      "maintenanceText": "₹7,000",
+      "photos": [
+        {
+          "dhash": "d6d9e7c5847f8523",
+          "seed": "u0-3",
+        },
+        {
+          "dhash": "1c38d4c8a210d959",
+          "seed": "u0-4",
+        },
+        {
+          "dhash": "2e5482d05b9f80f5",
+          "seed": "u0-1",
+        },
+        {
+          "dhash": "7bc877655db0f2e2",
+          "seed": "u0-5",
+        },
+        {
+          "dhash": "7f438ae207d9c211",
+          "seed": "u0-6",
+        },
+        {
+          "dhash": "c6ef021de3f4f8a7",
+          "seed": "u0-0",
+        },
+        {
+          "dhash": "1f13f79f450d6d4b",
+          "seed": "u0-2",
+        },
+      ],
+      "postedAt": "2026-04-04T00:00:00.000Z",
+      "rentText": "Rs. 67,000",
+      "sourceListingId": "tm-000001",
+      "tags": [
+        "Corporation water",
+        "Power backup",
+        "Lift",
+      ],
+      "title": "3 BHK apartment available in Ulsoor",
+    },
+  },
+  {
+    "id": "bn-000002",
+    "src": "rentbarn",
+    "v0": {
+      "areaText": "1100 sft",
+      "bhkText": "2",
+      "description": "Well maintained home close to markets and transit. Floor: 3/12; Facing: south; Parking: bike.",
+      "furnishingText": "SF",
+      "lat": 12.995571,
+      "lng": 77.623626,
+      "localityText": "Frazer Town, Bangalore",
+      "photos": [
+        {
+          "dhash": "3e076d3978e85a90",
+          "seed": "u1-0",
+        },
+        {
+          "dhash": "ba3224613ff6e0f5",
+          "seed": "u1-1",
+        },
+        {
+          "dhash": "ea1e5be6a76bc20b",
+          "seed": "u1-2",
+        },
+        {
+          "dhash": "ce0b70a7974404e8",
+          "seed": "u1-3",
+        },
+        {
+          "dhash": "c46b37c0778e4ef9",
+          "seed": "u1-4",
+        },
+      ],
+      "postedAt": "2026-04-07T00:00:00.000Z",
+      "rentText": "27500",
+      "sourceListingId": "bn-000002",
+      "tags": [
+        "Borewell",
+        "Power backup",
+      ],
+      "title": "2 BHK apartment available in Frazer Town",
+    },
+  },
+  {
+    "id": "pp-000001",
+    "src": "keyloft",
+    "v0": {
+      "bhkText": "PG",
+      "description": "Power backup, RO water and CCTV in common areas. .",
+      "lat": 13.059814,
+      "lng": 77.583289,
+      "localityText": "Sahakara Nagar, Bengaluru",
+      "pg": {
+        "foodText": "Meals included",
+        "genderText": "Gents",
+        "sharingText": "Triple sharing",
+      },
+      "photos": [
+        {
+          "dhash": "3d6465c4158fc616",
+          "seed": "u2-0",
+        },
+        {
+          "dhash": "e281a237fd197fd1",
+          "seed": "u2-1",
+        },
+        {
+          "dhash": "1624c15369fffa08",
+          "seed": "u2-2",
+        },
+      ],
+      "postedAt": "2026-04-04T00:00:00.000Z",
+      "rentText": "9000",
+      "sourceListingId": "pp-000001",
+      "tags": [],
+      "title": "Newly painted paying guest accommodation, Sahakara Nagar",
+    },
+  },
+]
+`;

@@ -17,7 +17,7 @@
     "preflight": "tsx scripts/preflight.ts",
     "brand-guard": "tsx scripts/brand-guard.ts",
     "check:boundaries": "depcruise apps packages --config .dependency-cruiser.cjs",
-    "verify": "pnpm typecheck && pnpm lint && pnpm check:boundaries && pnpm brand-guard && pnpm test && pnpm test:scripts",
+    "verify": "pnpm typecheck && pnpm lint && pnpm check:boundaries && pnpm brand-guard && pnpm db:check-drift && pnpm test",
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",
     "db:migrate": "pnpm --filter @roofline/db migrate",

@@ -9,14 +9,18 @@
     "seed": "tsx src/cli.ts seed",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src test"
+    "lint": "eslint src test",
+    "eval:quality": "tsx src/cli.ts eval quality"
   },
   "dependencies": {
+    "@roofline/db": "workspace:*",
     "@roofline/engine": "workspace:*",
-    "commander": "^12.1.0"
+    "commander": "^12.1.0",
+    "pg": "^8.23.1"
   },
   "devDependencies": {
     "@types/node": "^22.9.0",
+    "@types/pg": "^8.23.1",
     "vitest": "^2.1.4"
   }
 }
