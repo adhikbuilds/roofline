@@ -1,0 +1,28 @@
+# Dev-only credentials. Host port 5432 is fixed; `pnpm preflight` fails loudly if something else holds it.
+# If the postgis image has no manifest for your CPU, build the fallback instead:
+#   ROOFLINE_PG_BUILD=local docker compose up -d --build --wait
+services:
+  postgres:
+    image: ${ROOFLINE_PG_IMAGE:-postgis/postgis:16-3.5}
+    build:
+      context: ./packages/db/docker
+      dockerfile: Dockerfile
+    container_name: roofline-postgres
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:5432:5432'
+    environment:
+      POSTGRES_USER: roofline
+      POSTGRES_PASSWORD: roofline
+      POSTGRES_DB: roofline
+    volumes:
+      - roofline-pgdata:/var/lib/postgresql/data
+      - ./packages/db/docker/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U roofline -d roofline']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  roofline-pgdata:

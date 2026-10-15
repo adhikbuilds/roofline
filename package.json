@@ -1,0 +1,41 @@
+{
+  "name": "roofline",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "dev": "pnpm --filter @roofline/web dev",
+    "build": "pnpm --filter @roofline/web build",
+    "test": "pnpm test:scripts && pnpm -r --if-present test",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "lint": "pnpm -r --if-present lint",
+    "e2e": "pnpm --filter @roofline/web e2e",
+    "screens": "tsx scripts/screens.ts",
+    "preflight": "tsx scripts/preflight.ts",
+    "brand-guard": "tsx scripts/brand-guard.ts",
+    "check:boundaries": "depcruise apps packages --config .dependency-cruiser.cjs",
+    "verify": "pnpm typecheck && pnpm lint && pnpm check:boundaries && pnpm brand-guard && pnpm test && pnpm test:scripts",
+    "db:up": "docker compose up -d --wait",
+    "db:down": "docker compose down",
+    "db:migrate": "pnpm --filter @roofline/db migrate",
+    "db:reset": "pnpm --filter @roofline/db reset",
+    "db:seed": "pnpm --filter @roofline/ingest seed",
+    "db:fresh": "pnpm db:reset && pnpm db:migrate && pnpm db:seed",
+    "db:check-drift": "pnpm --filter @roofline/db check-drift",
+    "ingest:run": "pnpm --filter @roofline/ingest cli run",
+    "test:scripts": "vitest run --root scripts"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@types/node": "^22.9.0",
+    "dependency-cruiser": "^16.7.0",
+    "eslint": "^9.14.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.14.0",
+    "vitest": "^2.1.4"
+  }
+}

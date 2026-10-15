@@ -1,0 +1,88 @@
+/*
+ * Roofline visual direction: "Metro map, monsoon light" (PLAN.md §7).
+ * Cool concrete base, metro-signage indigo text, Purple Line as the only brand colour,
+ * and one diverging fairness scale. Type is Anek Latin; its width axis does the work.
+ */
+@import 'tailwindcss';
+
+@theme {
+  --color-concrete: #eef1f4;
+  --color-surface: #ffffff;
+  --color-indigo: #1c2342;
+  --color-indigo-2: #545b78;
+  --color-line: #d5dbe3;
+  --color-purple: #7b2d8e;
+  --color-purple-soft: #f1e6f4;
+
+  --color-deal: #0e7c66;
+  --color-good: #4e9f8a;
+  --color-fair: #8f97a6;
+  --color-above: #c9822e;
+  --color-over: #b23f2b;
+
+  --font-sans: var(--font-anek), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-panel: 12px;
+  --radius-row: 8px;
+  --radius-input: 6px;
+
+  --ease-out-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background: var(--color-concrete);
+    color: var(--color-indigo);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 24px;
+    font-variation-settings: 'wdth' 100;
+    text-rendering: optimizeLegibility;
+  }
+  @media (min-width: 768px) {
+    body {
+      font-size: 15px;
+      line-height: 23px;
+    }
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-purple);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  ::selection {
+    background: var(--color-purple-soft);
+    color: var(--color-indigo);
+  }
+}
+
+@layer utilities {
+  .type-display {
+    font-variation-settings: 'wdth' 118;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .type-label {
+    font-variation-settings: 'wdth' 82;
+    font-weight: 600;
+    letter-spacing: 0.005em;
+  }
+  .figures {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-property: opacity !important;
+    transition-duration: 1ms !important;
+  }
+}

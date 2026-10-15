@@ -1,0 +1,22 @@
+{
+  "name": "@roofline/ingest",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/adapter.ts",
+  "scripts": {
+    "cli": "tsx src/cli.ts",
+    "seed": "tsx src/cli.ts seed",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src test"
+  },
+  "dependencies": {
+    "@roofline/engine": "workspace:*",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "vitest": "^2.1.4"
+  }
+}

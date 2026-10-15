@@ -716,60 +716,59 @@ That is **69 localities**.
 
 ## 7. UI direction + page list
 
-### Direction: "The new classifieds"
+### Direction: "Metro map, monsoon light" (revised 2026-10-16)
 
-This is a modern resetting of the newspaper *To-Let* column: dense ruled columns, editorial headlines, figures in monospace, and one highlighter colour marking what matters. It deliberately rejects the soft-green card-grid template. There are **no drop shadows and no gradient blobs**. Hierarchy comes from type, rules and numbers.
+> Revised from the original "new classifieds" direction. That one used cream newsprint, a serif display face, hairline broadsheet
+> rules and monospace data labels, which is the generic AI-generated look the owner explicitly rejected. This direction takes its
+> cues from Bangalore wayfinding instead: Namma Metro line colours, BMTC route boards, washed concrete under monsoon light.
 
-**Typography.** All fonts via `next/font/google`, self-hosted at build, OFL licences:
+Roofline is a tool for people deciding where to live. It reads like a transit map: a calm, cool base, one strong line colour for
+"you are here", and a single diverging scale that answers "is this rent fair?". The memorable thing is the **fairness ruler** under
+every price. Everything around it stays quiet.
 
-| Role | Font | Settings |
-|---|---|---|
-| Display | **Fraunces** (variable) | opsz auto, weight 600, SOFT 30. H1, section titles, locality names on landing pages. |
-| UI and body | **IBM Plex Sans** | 14/20 desktop, 15/22 mobile; 500 for labels |
-| Figures | **IBM Plex Mono** | tabular numerals for every rupee, delta, minute and count |
-| Future Kannada UI | **Noto Sans Kannada** | reserved |
+**Typography.** One family, **Anek Latin** (Ek Type, an Indian foundry; OFL; variable `wdth` 75–125 and `wght` 100–800; includes ₹),
+loaded with `next/font/google`. The width axis is the device:
+- Display: wdth 118, wght 700, tight tracking (−0.02em). Used for H1s, locality names, the rent figure.
+- UI and body: wdth 100, wght 400/500, 15/23 (mobile 16/24).
+- Labels and chips: wdth 82 (condensed), wght 600, sentence case (never all caps).
+- Every rupee, minute and count: `font-variant-numeric: tabular-nums`. No monospace face.
+- **Anek Kannada** is reserved for bilingual locality names on landing pages (Phase 8).
 
-**Palette** (tokens in `@theme`, with a "night edition" variant in polish):
+**Palette** (tokens in `@theme`):
 
 | Token | Hex | Use |
 |---|---|---|
-| `--paper` | `#F3EEE3` | page background (newsprint) |
-| `--sheet` | `#FBF8F2` | raised surfaces (rows, sheets) |
-| `--ink` | `#16181D` | primary text, active nav |
-| `--ink-2` | `#4A4F5A` | secondary text |
-| `--rule` | `#D9D1C1` | 1px hairlines between rows and columns |
-| `--marigold` | `#E8A317` | the only brand accent: logo dot, focus ring, deal highlighter, selected pin |
-| `--deal` | `#0B6E69` | great_deal (diverging scale, colour-blind safe) |
-| `--good` | `#5FA39A` | good_price |
-| `--fair` | `#8A8F98` | fair |
-| `--above` | `#C9782F` | above_market |
-| `--over` | `#9E3B22` | overpriced |
+| `--concrete` | `#EEF1F4` | page background: monsoon-washed concrete, cool, not cream |
+| `--surface` | `#FFFFFF` | rows, panels, sheets |
+| `--indigo` | `#1C2342` | primary text, header (metro signage navy) |
+| `--indigo-2` | `#545B78` | secondary text |
+| `--line` | `#D5DBE3` | dividers, input borders |
+| `--purple` | `#7B2D8E` | the one brand colour (Purple Line): wordmark, selected state, focus ring, active pin, primary button |
+| `--purple-soft` | `#F1E6F4` | selected row and chip backgrounds |
+| `--deal` | `#0E7C66` · `--good` `#4E9F8A` · `--fair` `#8F97A6` · `--above` `#C9822E` · `--over` `#B23F2B` | fairness scale only; colour-blind-safe diverging |
 
-The status colours are the only other colours, and each one reports something.
+**Shape and density.**
+- Radius follows hierarchy: panels and sheets 12px, rows 8px, inputs 6px, chips fully rounded. No single radius on everything.
+- Elevation through surface-on-concrete contrast and one subtle border. The only shadow is on floating elements (map popover, bottom sheet).
+- Desktop list rows are 112px tall beside a sticky map. Filters are one horizontal chip bar; on mobile they open as a bottom sheet.
 
-**Shape and density:**
-- 2px radius everywhere; only the bottom sheet uses a 16px top radius.
-- Desktop list rows are 104px tall (8–9 visible beside the map).
-- Filters are a **single horizontal chip bar** (BHK, budget, furnishing, badge, "More") rather than a long accordion. Mobile filters live in a bottom sheet.
+**Signature elements.**
+- **Fairness ruler**: a 132px horizontal "metro line" under the price. Comps P10–P90 are the line, the fair-rent estimate is a station
+  dot, and the listing is a purple marker. The colour of the segment between station and marker is the verdict.
+- **Route chips**: commute times shown as small line-coloured pills ("Bike 18 min", "Metro 31 min"), echoing station boards.
+- **Plates**: procedural floor-plan placeholders instead of photos (no portal images, ever).
 
-**Signature elements:**
-- **Fairness ruler:** a 120px micro-scale under the price, showing comps P10–P90, a fair-rent tick and the listing's position.
-- **Plates:** procedural floor-plan placeholders instead of photos.
-- **Highlighter:** a marigold underline stroke on deal reasons.
-- **Ledger counts:** in the header, set in mono.
+**Motion.** 160 ms ease-out for state changes; bottom sheet 240 ms `cubic-bezier(.2,.8,.2,1)`; map `flyTo` 600 ms; the purple
+marker slides along the ruler once when a row first enters the viewport. `prefers-reduced-motion` turns all of it into opacity only.
 
-**Motion:**
-- 150 ms ease-out for state changes.
-- Bottom sheet 220 ms `cubic-bezier(.2,.8,.2,1)`.
-- Map `flyTo` 600 ms.
-- Pin pulse on row hover.
-- The highlighter sweeps once (400 ms) when a deal first enters the viewport.
-- `prefers-reduced-motion` reduces everything to opacity-only.
+**Brand.**
+- Wordmark: "roofline" in Anek Latin wdth 118 wght 700, indigo, with the mark to its left.
+- Mark: a single-stroke roofline (low gable chevron over a short rule) in purple, with a small dot under the apex. SVG in
+  `apps/web/public/brand/` and `app/icon.svg`.
+- Voice: plain, numerate, Bangalore-specific. Hero: "Every rental in Bangalore, counted once." Sentence case everywhere.
 
-**Brand:**
-- Wordmark: lowercase "roofline" in Fraunces 600.
-- Mark: a single-stroke roofline (a low gable chevron over a short horizontal rule) with a marigold dot under the apex (the lamp in the window). SVGs in `apps/web/public/brand/`.
-- Voice: plain, numerate and Bangalore-specific. Hero: "Every rental in Bangalore, counted once." Subline: "5,214 homes and PG beds from 5 demo sources. 1,183 duplicates merged, 191 rejected for bad data. See why."
+**Banned here:** cream backgrounds, serif display, monospace data labels, all-caps eyebrows, identical rounded card grids with soft
+grey shadows, gradient washes, "→" appended to links, middle-dot meta strings.
 
 **Global elements:**
 - Disclosure bar on every page in synthetic mode: "Demo data: synthetic listings generated for Bangalore. Not real offers."
