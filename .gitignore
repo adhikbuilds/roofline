@@ -1,0 +1,11 @@
+node_modules/
+.next/
+.env*
+!.env.example
+coverage/
+playwright-report/
+test-results/
+.turbo/
+# third-party reference material (kept local only)
+docs/recon/shots/
+docs/recon/*-text.md
