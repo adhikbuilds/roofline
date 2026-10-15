@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { multiSourceId } from './helpers';
 import { ROUTES } from './routes';
 
 test('home shows the brand shell and the demo-data notice', async ({ page }) => {
@@ -17,7 +18,11 @@ test('health endpoint reports ok', async ({ request }) => {
 
 for (const route of ROUTES) {
   test(`@overflow ${route} has no horizontal scroll`, async ({ page }) => {
-    await page.goto(route);
+    let path: string = route;
+    if (route.includes('[id]')) {
+      path = `/listing/${await multiSourceId()}`;
+    }
+    await page.goto(path);
     const { scrollWidth, clientWidth } = await page.evaluate(() => ({
       scrollWidth: document.scrollingElement!.scrollWidth,
       clientWidth: document.scrollingElement!.clientWidth,

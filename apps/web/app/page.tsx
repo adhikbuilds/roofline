@@ -19,10 +19,16 @@ export default async function HomesPage({
       <h1 className="type-display max-w-[18ch] text-[34px] leading-[38px] md:text-[52px] md:leading-[56px]">
         Every rental in Bangalore, counted once.
       </h1>
-      <p data-testid="ledger" className="figures mt-4 max-w-[62ch] text-[17px] leading-[26px] text-indigo-2">
-        {n(ledger.listings)} listings from {n(ledger.sources)} sources. {n(ledger.merged)} duplicates merged,{' '}
-        {n(ledger.rejected)} rejected for bad data.
-      </p>
+      {ledger ? (
+        <p data-testid="ledger" className="figures mt-4 max-w-[62ch] text-[17px] leading-[26px] text-indigo-2">
+          {n(ledger.listings)} listings from {n(ledger.sources)} sources. <span data-testid="dupes-merged">{n(ledger.merged)}</span> duplicates merged,{' '}
+          {n(ledger.rejected)} rejected for bad data.
+        </p>
+      ) : (
+        <p data-testid="ledger-unavailable" role="status" className="mt-4 max-w-[62ch] text-[17px] leading-[26px] text-indigo-2">
+          Listing counts are unavailable right now. Check that the database is running, then reload.
+        </p>
+      )}
 
       {listings.rows.length === 0 ? (
         <section
@@ -91,11 +97,15 @@ function FairnessRulerPreview() {
 function ListingItem({ l }: { l: ListingRow }) {
   const kind = l.unitKind === 'pg_bed' ? 'PG bed' : l.unitKind === 'studio' ? 'Studio' : l.unitKind === 'rk' ? '1 RK' : l.bhk ? `${l.bhk} BHK` : 'Home';
   return (
-    <li data-testid="listing-row" className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 rounded-[var(--radius-row)] border border-line bg-surface px-4 py-3 md:min-h-[112px] md:items-center">
+    <li data-testid="listing-row" className="relative flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 rounded-[var(--radius-row)] border border-line bg-surface px-4 py-3 md:min-h-[112px] md:items-center">
       <div className="min-w-0">
-        <div className="type-display figures text-[24px] leading-[30px]">
+        <Link
+          href={`/listing/${l.id}`}
+          aria-label={`${formatINR(l.rentInr)} a month, ${l.localityName}, ${kind}`}
+          className="type-display figures inline-flex min-h-11 items-baseline gap-2 text-[24px] leading-[30px] after:absolute after:inset-0 after:content-['']"
+        >
           {formatINR(l.rentInr)} <span className="text-[15px] font-normal text-indigo-2">a month</span>
-        </div>
+        </Link>
         <div className="mt-1 text-indigo-2">
           {l.localityName}, {kind}
           {l.areaSqft ? `, ${l.areaSqft.toLocaleString('en-IN')} sq ft` : ''}

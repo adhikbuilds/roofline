@@ -10,7 +10,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src test",
-    "eval:quality": "tsx src/cli.ts eval quality"
+    "eval:quality": "tsx src/cli.ts eval quality",
+    "eval:dedup": "tsx src/cli.ts eval dedup"
   },
   "dependencies": {
     "@roofline/db": "workspace:*",

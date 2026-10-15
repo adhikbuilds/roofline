@@ -6,7 +6,11 @@ function deps(over: Partial<CliDeps> = {}): CliDeps & { calls: string[] } {
   return {
     calls,
     seed: async () => void calls.push('seed'),
-    run: async (week) => void calls.push(`run:${week}`),
+    run: async (week, _log, opts) => void calls.push(`run:${week}${opts?.full ? ':full' : ''}`),
+    evalDedup: async () => {
+      calls.push('eval-dedup');
+      return { ok: true, lines: ['pairwise_precision=1.0000'] };
+    },
     evalQuality: async () => {
       calls.push('eval');
       return { ok: true, lines: ['planted_rejects=3 matched=3 extra_rejects=0'] };
@@ -16,10 +20,10 @@ function deps(over: Partial<CliDeps> = {}): CliDeps & { calls: string[] } {
 }
 
 describe('cli', () => {
-  it('lists run, seed and eval commands, with eval quality as a subcommand', () => {
+  it('lists run, seed and eval commands, with eval quality and dedup as subcommands', () => {
     const p = buildProgram(() => {}, deps());
     expect(p.commands.map((c) => c.name())).toEqual(['run', 'seed', 'eval']);
-    expect(p.commands.find((c) => c.name() === 'eval')?.commands.map((c) => c.name())).toEqual(['quality']);
+    expect(p.commands.find((c) => c.name() === 'eval')?.commands.map((c) => c.name())).toEqual(['quality', 'dedup']);
   });
 
   it('seed runs the injected seeder', async () => {
@@ -51,6 +55,35 @@ describe('cli', () => {
 
     const fail = vi.fn();
     await buildProgram(fail, deps({ evalQuality: async () => ({ ok: false, lines: ['planted_rejects=3 matched=2 extra_rejects=0'] }) })).parseAsync(['node', 'cli', 'eval', 'quality']);
+    expect(process.exitCode).toBe(1);
+    process.exitCode = prev;
+  });
+
+  it('run accepts --source synthetic, resolves --as-of to its week and passes --full', async () => {
+    const d = deps();
+    await buildProgram(() => {}, d).parseAsync(['node', 'cli', 'run', '--source', 'synthetic', '--as-of', '2026-10-01']);
+    await buildProgram(() => {}, d).parseAsync(['node', 'cli', 'run', '--source', 'synthetic', '--as-of', '2026-04-09', '--full']);
+    await buildProgram(() => {}, d).parseAsync(['node', 'cli', 'run', '--week', '3', '--full']);
+    expect(d.calls).toEqual(['run:25', 'run:0:full', 'run:3:full']);
+  });
+
+  it('run rejects an unknown source, an off-week as-of, a malformed date and both --week and --as-of', async () => {
+    const d = deps();
+    const run = (...a: string[]) => buildProgram(() => {}, d).parseAsync(['node', 'cli', 'run', ...a]);
+    await expect(run('--source', 'elsewhere')).rejects.toThrow(/unknown source/);
+    await expect(run('--as-of', '2026-10-02')).rejects.toThrow(/weekly/);
+    await expect(run('--as-of', 'yesterday')).rejects.toThrow(/YYYY-MM-DD/);
+    await expect(run('--week', '1', '--as-of', '2026-10-01')).rejects.toThrow(/either/);
+    expect(d.calls).toEqual([]);
+  });
+
+  it('eval dedup prints the report and sets a failing exit code when not ok', async () => {
+    const lines: string[] = [];
+    const prev = process.exitCode;
+    await buildProgram((m) => lines.push(m), deps()).parseAsync(['node', 'cli', 'eval', 'dedup']);
+    expect(lines).toEqual(['pairwise_precision=1.0000']);
+    expect(process.exitCode).toBe(prev);
+    await buildProgram(() => {}, deps({ evalDedup: async () => ({ ok: false, lines: ['x'] }) })).parseAsync(['node', 'cli', 'eval', 'dedup']);
     expect(process.exitCode).toBe(1);
     process.exitCode = prev;
   });

@@ -9,14 +9,14 @@ export const WEEK_MS = 7 * 24 * 3600 * 1000;
 export const weekAsOf = (w: number): Date => new Date(FIRST_AS_OF + w * WEEK_MS);
 export const weekIndexOf = (asOf: Date): number => Math.round((asOf.getTime() - FIRST_AS_OF) / WEEK_MS);
 
-export const TARGET_UNITS = 5350;
+export const TARGET_UNITS = 6400;
 export const PG_UNIT_SHARE = 1200 / 5350;
 export const HARD_NEGATIVE_PAIRS = 150;
 /** Share of units listed on 1, 2 or 3 sources. */
 export const SOURCE_COUNT_WEIGHTS = [0.8, 0.16, 0.04] as const;
 
-export const WEEKLY_NEW = 0.04;
-export const WEEKLY_DELIST = 0.03;
+export const WEEKLY_NEW = 0.015;
+export const WEEKLY_DELIST = 0.01;
 export const WEEKLY_PRICE_CHANGE = 0.02;
 export const DRIFT_PER_MONTH = 0.004;
 

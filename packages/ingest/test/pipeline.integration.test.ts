@@ -70,7 +70,7 @@ describe('pipeline stages 1-4 on the 40-row fixture (exact counts)', () => {
     }).toEqual({ ...exp, reasons: [...exp.reasons].sort(), warnings: [...exp.warnings].sort() });
   });
 
-  it('accepted rows become 1:1 placeholder listings and rejected rows do not', async () => {
+  it('with no photos nothing merges: accepted rows become singleton listings and rejected rows do not', async () => {
     const c = await one<{ listings: string; accepted: string; linked: string; bad_links: string }>(
       `SELECT (SELECT count(*) FROM listings) AS listings,
               (SELECT count(*) FROM source_listings WHERE quality_status = 'accepted') AS accepted,

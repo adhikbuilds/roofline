@@ -1,6 +1,6 @@
-/** Persistence: source_listings, 1:1 placeholder listings, price observations, delisting. */
+/** Persistence: source_listings, price observations on change, delisting. Listings are built by stage 5 (dedup.ts). */
 import { geohashEncode } from '@roofline/engine';
-import { listingUuid, sourceListingUuid } from '../ids';
+import { sourceListingUuid } from '../ids';
 import type { Db } from './db';
 import type { Draft } from './types';
 
@@ -33,7 +33,7 @@ FROM jsonb_to_recordset($1::jsonb) AS x(
   tags jsonb, posted_at timestamptz, seen_at timestamptz, quality_status text, quality_reasons jsonb,
   quality_warnings jsonb, extracted_by text, is_synthetic boolean)
 ON CONFLICT (source_id, source_listing_id) DO UPDATE SET
-  listing_id = EXCLUDED.listing_id, unit_kind = EXCLUDED.unit_kind, bhk = EXCLUDED.bhk, rent_inr = EXCLUDED.rent_inr,
+  unit_kind = EXCLUDED.unit_kind, bhk = EXCLUDED.bhk, rent_inr = EXCLUDED.rent_inr,
   deposit_inr = EXCLUDED.deposit_inr, maintenance_inr = EXCLUDED.maintenance_inr, area_sqft = EXCLUDED.area_sqft,
   furnishing = EXCLUDED.furnishing, locality_id = EXCLUDED.locality_id, geom = EXCLUDED.geom,
   geohash6 = EXCLUDED.geohash6, title = EXCLUDED.title, title_tokens = EXCLUDED.title_tokens,
@@ -44,32 +44,23 @@ ON CONFLICT (source_id, source_listing_id) DO UPDATE SET
   quality_status = EXCLUDED.quality_status, quality_reasons = EXCLUDED.quality_reasons,
   quality_warnings = EXCLUDED.quality_warnings, extracted_by = EXCLUDED.extracted_by`;
 
-const UPSERT_LISTINGS = `
-INSERT INTO listings (
-  id, canonical_source_listing_id, member_count, source_count, source_ids, rent_min_inr, rent_max_inr, unit_kind, bhk,
-  rent_inr, deposit_inr, area_sqft, furnishing, locality_id, geom, pg_sharing, pg_food_included, pg_gender,
-  photo_seeds, first_seen_at, is_active)
-SELECT sl.listing_id, sl.id, 1, 1, ARRAY[sl.source_id], sl.rent_inr, sl.rent_inr, sl.unit_kind, sl.bhk,
-  sl.rent_inr, sl.deposit_inr, sl.area_sqft, sl.furnishing, sl.locality_id, sl.geom, sl.pg_sharing,
-  sl.pg_food_included, sl.pg_gender, sl.photo_seeds, sl.first_seen_at, true
-FROM source_listings sl
-WHERE sl.id = ANY($1::uuid[]) AND sl.quality_status = 'accepted' AND sl.listing_id IS NOT NULL
-ON CONFLICT (id) DO UPDATE SET
-  last_price_change_at = CASE WHEN listings.rent_inr <> EXCLUDED.rent_inr THEN $2::timestamptz
-                              ELSE listings.last_price_change_at END,
-  rent_min_inr = EXCLUDED.rent_min_inr, rent_max_inr = EXCLUDED.rent_max_inr, rent_inr = EXCLUDED.rent_inr,
-  deposit_inr = EXCLUDED.deposit_inr, area_sqft = EXCLUDED.area_sqft, furnishing = EXCLUDED.furnishing,
-  locality_id = EXCLUDED.locality_id, geom = EXCLUDED.geom, pg_sharing = EXCLUDED.pg_sharing,
-  pg_food_included = EXCLUDED.pg_food_included, pg_gender = EXCLUDED.pg_gender, photo_seeds = EXCLUDED.photo_seeds,
-  is_active = true`;
+/** Price observation only on first sighting or when (rent, deposit) differs from the latest one. */
+const INSERT_OBSERVATIONS = `
+INSERT INTO price_observations (source_listing_id, observed_at, rent_inr, deposit_inr, run_id)
+SELECT x.id, $2::timestamptz, x.rent, x.deposit, x.run_id
+  FROM jsonb_to_recordset($1::jsonb) AS x(id uuid, rent int, deposit int, run_id bigint)
+  LEFT JOIN LATERAL (SELECT p.rent_inr, p.deposit_inr FROM price_observations p
+                      WHERE p.source_listing_id = x.id ORDER BY p.observed_at DESC LIMIT 1) last ON true
+ WHERE last.rent_inr IS NULL OR (last.rent_inr, last.deposit_inr) IS DISTINCT FROM (x.rent, x.deposit)
+ON CONFLICT (source_listing_id, observed_at) DO NOTHING
+RETURNING run_id`;
 
 function toRecord(d: Draft): Record<string, unknown> {
-  const accepted = d.status === 'accepted';
   return {
     id: sourceListingUuid(d.sourceId, d.sourceListingId),
     source_id: d.sourceId,
     source_listing_id: d.sourceListingId,
-    listing_id: accepted ? listingUuid(d.sourceId, d.sourceListingId) : null,
+    listing_id: null, // prior membership is owned by stage 5 and never written here
     // Unit kind is NOT NULL in the schema: an unparseable kind is stored as a BHK of unknown size and rejected.
     unit_kind: d.unitKind ?? 'bhk',
     bhk: d.bhk,
@@ -106,11 +97,13 @@ function toRecord(d: Draft): Record<string, unknown> {
 }
 
 export interface PersistResult {
+  /** Accepted drafts written, per run. */
   listingsUpserted: Map<number, number>;
+  /** Observations actually inserted, per run. */
   priceObservations: Map<number, number>;
 }
 
-/** Upsert every processed draft; accepted ones also become 1:1 placeholder listings (dedup is Phase 2). */
+/** Upsert every processed draft and record price observations on change. Listings come from stage 5. */
 export async function persistDrafts(db: Db, drafts: Draft[], asOf: Date): Promise<PersistResult> {
   const listingsUpserted = new Map<number, number>();
   const priceObservations = new Map<number, number>();
@@ -118,50 +111,42 @@ export async function persistDrafts(db: Db, drafts: Draft[], asOf: Date): Promis
     const part = drafts.slice(i, i + CHUNK);
     await db.query(UPSERT_SOURCE_LISTINGS, [JSON.stringify(part.map(toRecord))]);
     const accepted = part.filter((d) => d.status === 'accepted');
-    const rejectedIds = part.filter((d) => d.status === 'rejected').map((d) => listingUuid(d.sourceId, d.sourceListingId));
     if (accepted.length > 0) {
-      await db.query(UPSERT_LISTINGS, [accepted.map((d) => sourceListingUuid(d.sourceId, d.sourceListingId)), asOf.toISOString()]);
-      await db.query(
-        `INSERT INTO price_observations (source_listing_id, observed_at, rent_inr, deposit_inr, run_id)
-         SELECT x.id, $2::timestamptz, x.rent, x.deposit, x.run_id
-           FROM jsonb_to_recordset($1::jsonb) AS x(id uuid, rent int, deposit int, run_id bigint)
-         ON CONFLICT (source_listing_id, observed_at) DO NOTHING`,
-        [
-          JSON.stringify(accepted.map((d) => ({ id: sourceListingUuid(d.sourceId, d.sourceListingId), rent: d.rentInr, deposit: d.depositInr, run_id: d.runId }))),
-          asOf.toISOString(),
-        ],
-      );
+      const res = await db.query<{ run_id: string }>(INSERT_OBSERVATIONS, [
+        JSON.stringify(accepted.map((d) => ({ id: sourceListingUuid(d.sourceId, d.sourceListingId), rent: d.rentInr, deposit: d.depositInr, run_id: d.runId }))),
+        asOf.toISOString(),
+      ]);
+      for (const r of res.rows) priceObservations.set(Number(r.run_id), (priceObservations.get(Number(r.run_id)) ?? 0) + 1);
     }
-    if (rejectedIds.length > 0) await db.query('UPDATE listings SET is_active = false WHERE id = ANY($1::uuid[])', [rejectedIds]);
-    for (const d of accepted) {
-      listingsUpserted.set(d.runId, (listingsUpserted.get(d.runId) ?? 0) + 1);
-      priceObservations.set(d.runId, (priceObservations.get(d.runId) ?? 0) + 1);
-    }
+    for (const d of accepted) listingsUpserted.set(d.runId, (listingsUpserted.get(d.runId) ?? 0) + 1);
   }
   return { listingsUpserted, priceObservations };
 }
 
-/** Rows seen again unchanged: bump last_seen_at and reactivate. */
-export async function touchSeen(db: Db, sourceId: string, ids: string[], asOf: Date): Promise<void> {
+/** Rows seen again unchanged: bump last_seen_at and reactivate. Returns the ids that were reactivated. */
+export async function touchSeen(db: Db, sourceId: string, ids: string[], asOf: Date): Promise<string[]> {
+  const reactivated: string[] = [];
   for (let i = 0; i < ids.length; i += 2000) {
-    await db.query(
-      `UPDATE source_listings SET last_seen_at = $3::timestamptz, is_active = true
-        WHERE source_id = $1 AND source_listing_id = ANY($2::text[])`,
+    const res = await db.query<{ id: string; was_active: boolean }>(
+      `UPDATE source_listings sl SET last_seen_at = $3::timestamptz, is_active = true
+         FROM (SELECT id, is_active AS was_active FROM source_listings
+                WHERE source_id = $1 AND source_listing_id = ANY($2::text[])) old
+        WHERE sl.id = old.id
+        RETURNING sl.id, old.was_active`,
       [sourceId, ids.slice(i, i + 2000), asOf.toISOString()],
     );
+    for (const r of res.rows) if (!r.was_active) reactivated.push(r.id);
   }
+  return reactivated;
 }
 
-/** Rows this source no longer returns are delisted (kept, inactive); returns how many. */
-export async function delistMissing(db: Db, sourceId: string, seenIds: string[]): Promise<number> {
+/** Rows this source no longer returns are delisted (kept, inactive). Returns their ids; stage 5 handles listings. */
+export async function delistMissing(db: Db, sourceId: string, seenIds: string[]): Promise<string[]> {
   const res = await db.query<{ id: string }>(
     `UPDATE source_listings SET is_active = false
       WHERE source_id = $1 AND is_active AND NOT (source_listing_id = ANY($2::text[]))
       RETURNING id`,
     [sourceId, seenIds],
   );
-  if (res.rows.length > 0) {
-    await db.query('UPDATE listings SET is_active = false WHERE canonical_source_listing_id = ANY($1::uuid[])', [res.rows.map((r) => r.id)]);
-  }
-  return res.rows.length;
+  return res.rows.map((r) => r.id);
 }

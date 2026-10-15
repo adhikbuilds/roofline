@@ -2,11 +2,21 @@ import { Command, InvalidArgumentError } from 'commander';
 
 export interface CliDeps {
   seed(log: (m: string) => void): Promise<void>;
-  run(week: number, log: (m: string) => void): Promise<void>;
+  run(week: number, log: (m: string) => void, opts?: { full?: boolean }): Promise<void>;
   evalQuality(): Promise<{ ok: boolean; lines: string[] }>;
+  evalDedup(): Promise<{ ok: boolean; lines: string[] }>;
 }
 
 const WEEKS = 26;
+
+const SOURCES = ['synthetic'] as const;
+
+/** `--as-of YYYY-MM-DD` must land exactly on one of the 26 weekly as-of dates; returns the week index. */
+export function weekFromAsOf(v: string, weekAsOf: (w: number) => Date): number {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) throw new InvalidArgumentError('as-of must be YYYY-MM-DD');
+  for (let w = 0; w < WEEKS; w++) if (weekAsOf(w).toISOString().slice(0, 10) === v) return w;
+  throw new InvalidArgumentError(`as-of ${v} is not one of the ${WEEKS} weekly synthetic dates (${weekAsOf(0).toISOString().slice(0, 10)} + 7n days)`);
+}
 
 function parseWeek(v: string): number {
   const n = Number(v);
@@ -31,7 +41,7 @@ const defaultDeps: CliDeps = {
       await close();
     }
   },
-  async run(week, log) {
+  async run(week, log, opts = {}) {
     const { withAdmin, close } = await import('@roofline/db');
     const { createSyntheticAdapters, generateSeed, weekAsOf } = await import('./adapters/synthetic');
     const { loadSeedRefs } = await import('./seed');
@@ -40,8 +50,17 @@ const defaultDeps: CliDeps = {
       await withAdmin(async (client) => {
         const { refs } = await loadSeedRefs(client);
         const adapters = createSyntheticAdapters(generateSeed(refs));
-        await runWeek(client, adapters, weekAsOf(week), { log });
+        await runWeek(client, adapters, weekAsOf(week), { log, full: opts.full });
       });
+    } finally {
+      await close();
+    }
+  },
+  async evalDedup() {
+    const { withAdmin, close } = await import('@roofline/db');
+    const { evalDedup } = await import('./eval/dedup-eval');
+    try {
+      return await withAdmin((client) => evalDedup(client));
     } finally {
       await close();
     }
@@ -63,9 +82,21 @@ export function buildProgram(log: (msg: string) => void = (m) => console.log(m),
 
   program
     .command('run')
-    .description('Ingest one synthetic week through the pipeline (stages 1-4)')
-    .option('--week <n>', `week index 0-${WEEKS - 1}`, parseWeek, 0)
-    .action(async (opts: { week: number }) => deps.run(opts.week, log));
+    .description('Ingest one synthetic week through the pipeline (stages 1-5)')
+    .option('--source <id>', `source to ingest (${SOURCES.join(', ')})`, 'synthetic')
+    .option('--week <n>', `week index 0-${WEEKS - 1}`, parseWeek)
+    .option('--as-of <date>', 'weekly as-of date, YYYY-MM-DD (alternative to --week)')
+    .option('--full', 'rescore every block and re-assign identities against all listings', false)
+    .action(async (opts: { source: string; week?: number; asOf?: string; full: boolean }) => {
+      if (!(SOURCES as readonly string[]).includes(opts.source)) throw new InvalidArgumentError(`unknown source ${opts.source}`);
+      if (opts.week !== undefined && opts.asOf !== undefined) throw new InvalidArgumentError('pass either --week or --as-of, not both');
+      let week = opts.week ?? 0;
+      if (opts.asOf !== undefined) {
+        const { weekAsOf } = await import('./adapters/synthetic/params');
+        week = weekFromAsOf(opts.asOf, weekAsOf);
+      }
+      await deps.run(week, log, { full: opts.full });
+    });
 
   program
     .command('seed')
@@ -77,6 +108,13 @@ export function buildProgram(log: (msg: string) => void = (m) => console.log(m),
     .description('planted_rejects / matched / extra_rejects against seed_truth')
     .action(async () => {
       const res = await deps.evalQuality();
+      for (const line of res.lines) log(line);
+      if (!res.ok) process.exitCode = 1;
+    });
+  ev.command('dedup')
+    .description('pairwise P/R, B-cubed F1, hard_negative_merges and blocking_recall against seed_truth')
+    .action(async () => {
+      const res = await deps.evalDedup();
       for (const line of res.lines) log(line);
       if (!res.ok) process.exitCode = 1;
     });

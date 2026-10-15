@@ -4,6 +4,9 @@
  * Any failure (database down, tables not migrated or empty) degrades to an empty state instead of a 500.
  */
 
+import { resolveRedirect, type HistoryPoint, type Resolution } from './listing-detail';
+import { PLATE_SEED } from './plate';
+
 export const PAGE_SIZE = 40;
 
 export type Ledger = { listings: number; sources: number; merged: number; rejected: number };
@@ -36,12 +39,13 @@ async function query<T extends Record<string, unknown>>(text: string, params: un
   return withReadOnly(async (client) => (await client.query<T>(text, params)).rows);
 }
 
-export async function getLedger(): Promise<Ledger> {
+/** Null means the counts could not be read (database down). The header must not show zeros as if they were real. */
+export async function getLedger(): Promise<Ledger | null> {
   try {
-    const [r] = await query<{ listings: string; sources: string; accepted: string; rejected: string }>(
+    const [r] = await query<{ listings: string; sources: string; merged: string; rejected: string }>(
       `SELECT (SELECT count(*) FROM listings WHERE is_active) AS listings,
               (SELECT count(DISTINCT source_id) FROM source_listings) AS sources,
-              (SELECT count(*) FROM source_listings WHERE quality_status = 'accepted') AS accepted,
+              (SELECT coalesce(sum(member_count - 1), 0) FROM listings WHERE is_active) AS merged,
               (SELECT count(*) FROM source_listings WHERE quality_status = 'rejected') AS rejected`,
     );
     if (!r) return EMPTY_LEDGER;
@@ -49,11 +53,11 @@ export async function getLedger(): Promise<Ledger> {
     return {
       listings,
       sources: Number(r.sources),
-      merged: Math.max(0, Number(r.accepted) - listings),
+      merged: Number(r.merged),
       rejected: Number(r.rejected),
     };
   } catch {
-    return EMPTY_LEDGER;
+    return null;
   }
 }
 
@@ -112,5 +116,82 @@ export async function getLocalities(): Promise<LocalityRow[]> {
     }));
   } catch {
     return [];
+  }
+}
+
+export type ListingSource = { sourceId: string; sourceName: string; rentInr: number | null; depositInr: number | null };
+export type ListingDetail = {
+  id: string;
+  rentInr: number;
+  depositInr: number | null;
+  moveInInr: number | null;
+  unitKind: string;
+  bhk: number | null;
+  areaSqft: number | null;
+  furnishing: string | null;
+  localityName: string;
+  sourceCount: number;
+  plateSeeds: string[];
+  sources: ListingSource[];
+  history: HistoryPoint[];
+};
+
+/** Is this id a live listing, an old id that redirects to one (max 3 hops), or unknown? Failures read as unknown. */
+export async function resolveListing(id: string): Promise<Resolution> {
+  try {
+    return await resolveRedirect(
+      id,
+      async (old) => (await query<{ new_id: string }>('SELECT new_id FROM listing_redirects WHERE old_id = $1', [old]))[0]?.new_id ?? null,
+      async (cand) => (await query('SELECT 1 FROM listings WHERE id = $1 AND is_active', [cand])).length > 0,
+    );
+  } catch {
+    return { kind: 'missing' };
+  }
+}
+
+export async function getListingDetail(id: string): Promise<ListingDetail | null> {
+  try {
+    const [l] = await query<{
+      id: string; rent_inr: number; deposit_inr: number | null; move_in_inr: number | null; unit_kind: string;
+      bhk: number | null; area_sqft: number | null; furnishing: string | null; source_count: number;
+      photo_seeds: string[]; locality_name: string; canonical: string;
+    }>(
+      `SELECT l.id, l.rent_inr, l.deposit_inr, l.move_in_inr, l.unit_kind, l.bhk, l.area_sqft, l.furnishing::text AS furnishing,
+              l.source_count, l.photo_seeds, loc.name AS locality_name, l.canonical_source_listing_id AS canonical
+         FROM listings l JOIN localities loc ON loc.id = l.locality_id
+        WHERE l.id = $1 AND l.is_active`,
+      [id],
+    );
+    if (!l) return null;
+    const [sources, history] = await Promise.all([
+      query<{ source_id: string; display_name: string; rent_inr: number | null; deposit_inr: number | null }>(
+        `SELECT s.source_id, src.display_name, s.rent_inr, s.deposit_inr
+           FROM source_listings s JOIN sources src ON src.id = s.source_id
+          WHERE s.listing_id = $1
+          ORDER BY src.priority, src.display_name, s.id`,
+        [id],
+      ),
+      query<{ observed_at: Date; rent_inr: number }>(
+        `SELECT observed_at, rent_inr FROM price_observations WHERE source_listing_id = $1 ORDER BY observed_at`,
+        [l.canonical],
+      ),
+    ]);
+    return {
+      id: l.id,
+      rentInr: l.rent_inr,
+      depositInr: l.deposit_inr,
+      moveInInr: l.move_in_inr ?? (l.deposit_inr == null ? null : l.rent_inr + l.deposit_inr),
+      unitKind: l.unit_kind,
+      bhk: l.bhk,
+      areaSqft: l.area_sqft,
+      furnishing: l.furnishing,
+      localityName: l.locality_name,
+      sourceCount: l.source_count,
+      plateSeeds: l.photo_seeds.filter((x) => PLATE_SEED.test(x)),
+      sources: sources.map((r) => ({ sourceId: r.source_id, sourceName: r.display_name, rentInr: r.rent_inr, depositInr: r.deposit_inr })),
+      history: history.map((h) => ({ at: new Date(h.observed_at).toISOString(), rentInr: h.rent_inr })),
+    };
+  } catch {
+    return null;
   }
 }

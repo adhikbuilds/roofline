@@ -4,6 +4,8 @@ export { normalizeRaw, toSignedHash } from './normalize';
 export { extractFromDescription } from './extract';
 export { canonicalizeLocality, loadRefData } from './locality';
 export { assessDrafts, loadPriorAccepted } from './quality';
+export { runDedup } from './dedup';
+export type { DedupStats, DedupInput } from './dedup';
 export { storeRaw } from './raw';
 export { persistDrafts, delistMissing, touchSeen } from './persist';
 export type { Db } from './db';

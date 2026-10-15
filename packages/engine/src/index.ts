@@ -41,3 +41,4 @@ export type {
   OutlierLevel,
   Assessment,
 } from './quality';
+export * from './dedup';

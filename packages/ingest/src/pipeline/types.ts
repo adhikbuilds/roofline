@@ -1,5 +1,6 @@
 import type { LocalityIndex } from '@roofline/engine';
 import type { RawListing } from '../adapter';
+import type { DedupStats } from './dedup';
 
 export interface LocalityInfo {
   id: number;
@@ -88,6 +89,12 @@ export interface RunStats {
   listings_upserted: number;
   price_observations: number;
   batch_size: number;
+  /** Alias of raw_stored: raw payloads inserted this run. */
+  raw_inserted: number;
+  /** Listings rows written by stage 5 (set on the invocation's lowest run id, 0 elsewhere). */
+  listings_changed: number;
+  /** Stage 5 stats on the invocation's lowest run id; other runs point at it. */
+  dedup?: DedupStats | { see_run: number };
 }
 
 export interface RunResult {

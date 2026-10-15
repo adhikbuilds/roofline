@@ -1,7 +1,7 @@
 # Architecture (v1)
 
 **Last Updated:** 2026-10-16
-**Status:** v1 = Phase 0 (scaffold, shell) and Phase 1 (data foundation). Items marked *planned* are in PLAN.md and do not exist in the code yet.
+**Status:** v1 = Phase 0 (scaffold, shell), Phase 1 (data foundation) and the deduplication stage of Phase 2 (stage 5). Items marked *planned* are in PLAN.md and do not exist in the code yet.
 
 Roofline is a pnpm monorepo: one Next.js app, three libraries. The engine is pure domain logic, the database package owns schema and access, and the ingest package turns sources into accepted listings.
 
@@ -17,8 +17,8 @@ Roofline is a pnpm monorepo: one Next.js app, three libraries. The engine is pur
   +----------------------v------------------------+        +----------------------------+
   | @roofline/ingest                              |        | @roofline/engine           |
   |  cli.ts  seed.ts  eval/  pipeline/            |<------>| pure: normalize, locality, |
-  |  raw -> normalize -> locality -> quality      |  pure  | geo, stats, quality, trace,|
-  |  -> persist                                   |  calls | flags, money, version      |
+  |  raw -> normalize -> locality -> quality      |  pure  | geo, stats, quality, dedup,|
+  |  -> persist -> dedup                          |  calls | trace, flags, money, version|
   +----------------------+------------------------+        +-------------^--------------+
                          | writes (admin role)                          | imports pure fns
   +----------------------v------------------------+                       |
@@ -50,10 +50,50 @@ Pure TypeScript. No I/O, no clock (`asOf` is an input), no randomness, no depend
 | `normalize/` | `money.ts`, `area.ts`, `unit.ts`, `furnishing.ts`, `pg.ts`, `other.ts`, `tokens.ts`, `types.ts` | `parseMoney`, `parseRent`, `parseDeposit`, `repairRent`, area, unit, furnishing and PG parsers | ingest |
 | `locality/` | `norm.ts`, `jaro-winkler.ts`, `resolve.ts` | `normLocality`, `isStopLocality`, `jaroWinkler`, `buildLocalityIndex`, `resolveLocality` | ingest |
 | `quality/` | `constants.ts`, `types.ts`, `rules.ts`, `outliers.ts`, `assess.ts` | `REASON_CODES`, `WARNING_CODES`, `QUALITY_BOUNDS`, `OUTLIER_PARAMS`, `hardRules`, `buildBaseline`, `checkOutlier`, `assessRow`, `assessBatch` | ingest, synthetic generator |
+| `dedup/` | `types.ts`, `dhash.ts`, `blocking.ts`, `similarity.ts`, `cluster.ts`, `canonical.ts`, `index.ts` | `DedupRecord`, `BLOCKING`, `SIMILARITY`, `GUARDS`, `indexKeys`, `probeKeys`, `candidatePairs`, `gate`, `scorePair`, `clusterRecords`, `pickCanonical`, `assignIdentities` | ingest |
 
 Tests live in `packages/engine/test/` (one folder per module). Coverage reports exist under `packages/engine/coverage/` (generated, not maintained).
 
-*Planned:* `dedup/`, `fairrent/`, `deals/`, `commute/`, `tco/`, `filters/`, `alerts/`, `query/` (PLAN.md section 3).
+#### Dedup codemap (`packages/engine/src/dedup/`)
+
+Pure stage 5 logic. The ingest side (`packages/ingest/src/pipeline/dedup.ts`) loads members, calls these functions and writes `dedup_pairs`, `listings` and `listing_redirects`.
+
+```
+                 DedupRecord (types.ts)            one accepted, active source row
+                        |
+     +------------------+-------------------+
+     |                                      |
+  dhash.ts                            blocking.ts
+  parsePhotoHash, hamming64,          unitClass, rentBand,
+  minHamming                          indexKeys, probeKeys,
+     |                                 buildBlockIndex, candidatePairs
+     +------------------+-------------------+
+                        |
+                similarity.ts
+                gate -> pairFeatures -> scorePair (match / possible / none)
+                        |  match edges only
+                        v
+                 cluster.ts
+                 UnionFind, checkGuards, clusterRecords (Kruskal + guards)
+                        |  clusters
+                        v
+                 canonical.ts
+                 completeness, pickCanonical, summarizeCluster, assignIdentities
+```
+
+| File | Responsibility | Key exports | Imports |
+|---|---|---|---|
+| `types.ts` | Input record for one member row | `DedupRecord`, `DedupUnitKind` | `geo`, `normalize` (types only) |
+| `dhash.ts` | 64-bit photo hash parsing and distance | `parsePhotoHash`, `popcount64`, `hamming64`, `minHamming` | none |
+| `blocking.ts` | Unit class, log rent band, geohash keys, candidate pairs | `BLOCKING`, `unitClass`, `rentBand`, `indexKeys`, `probeKeys`, `buildBlockIndex`, `candidatePairs` | `geo` (geohash), `types` |
+| `similarity.ts` | Hard gates, per-feature scores, weights, penalties, caps, thresholds | `SIMILARITY`, `gate`, `pairFeatures`, `scorePair`, `featuresJson`, `photoSimilarity`, `geoSimilarity`, `rentSimilarity`, `areaSimilarity`, `jaccard` | `blocking` (`unitClass`), `dhash`, `geo` |
+| `cluster.ts` | Union-find, chaining guards, guarded clustering with `guard_split` edges | `GUARDS`, `UnionFind`, `checkGuards`, `clusterRecords` | `geo`, `types` |
+| `canonical.ts` | Canonical row choice, cluster summary, identity inheritance and redirects | `completeness`, `compareCanonical`, `pickCanonical`, `summarizeCluster`, `assignIdentities` | `types` |
+| `index.ts` | Barrel; re-exported from the engine root | all of the above | |
+
+Tests: `packages/engine/test/dedup/` (`blocking`, `canonical`, `cluster`, `similarity` specs plus `fixtures.ts` and `helpers.ts`).
+
+*Planned:* `fairrent/`, `deals/`, `commute/`, `tco/`, `filters/`, `alerts/`, `query/` (PLAN.md section 3).
 
 ### `@roofline/db` (`packages/db`)
 
@@ -94,11 +134,13 @@ Sources, pipeline and the synthetic seed. May import engine and db. Must not imp
 | `src/pipeline/persist.ts` | Upserts `source_listings`, placeholder `listings`, `price_observations`; delists missing rows |
 | `src/pipeline/db.ts`, `types.ts` | `Db` interface, draft and stats types |
 | `src/seed.ts` | `loadSeedRefs()`, `seedSynthetic()`: ground truth first, then 26 weekly runs |
+| `src/pipeline/dedup.ts` | Stage 5: `loadMembers()`, scoring of dirty blocks, clustering, identity assignment, writes to `dedup_pairs`, `listings`, `listing_redirects` |
 | `src/eval/quality.ts` | `evalQuality()`: planted rejects vs. pipeline rejects |
-| `src/cli.ts` | `roofline-ingest` commander CLI: `run [--week n]`, `seed`, `eval quality` |
-| `test/` | Unit tests, fixture adapter, pipeline integration test (40-row fixture), generator snapshot |
+| `src/eval/dedup-eval.ts` | `evalDedup()`: pairwise and B-cubed metrics, hard-negative merges, blocking recall against `seed_truth` |
+| `src/cli.ts` | `roofline-ingest` commander CLI: `run [--week n] [--full]`, `seed`, `eval quality`, `eval dedup` |
+| `test/` | Unit tests, fixture adapter, pipeline integration test (40-row fixture), dedup integration and eval tests, generator snapshot |
 
-*Planned:* `adapters/csv-feed/`, `adapters/owner-submission/` (schema only in v1), `llm/` (optional LLM extraction), pipeline stages 5 to 8.
+*Planned:* `adapters/csv-feed/`, `adapters/owner-submission/` (schema only in v1), `llm/` (optional LLM extraction), pipeline stages 6 to 8.
 
 ### `@roofline/web` (`apps/web`)
 
@@ -157,7 +199,8 @@ One transaction per week. All adapters are fetched first, so every source shares
 4. Quality (stage 4): repair, deposit, hard rules, outlier test against the prior accepted set plus this batch's survivors.
 5. Persist: upsert `source_listings` with status, reasons and warnings; accepted rows become 1:1 placeholder `listings`; write `price_observations` on price change.
 6. Delist rows the source no longer returns (kept, `is_active = false`).
-7. Write counts to `ingest_runs.stats` and mark each run `ok`. Record unmatched locality strings in `locality_unmatched`.
+7. Dedup, identity and clusters (stage 5, `pipeline/dedup.ts`): score candidate pairs in the dirty blocks, write `dedup_pairs`, cluster under the chaining guards, assign or mint `listings.id`, write `listing_redirects` for replaced ids, and upsert `listings`. Runs inside the same transaction, after persist and delisting.
+8. Write counts to `ingest_runs.stats` and mark each run `ok`. Record unmatched locality strings in `locality_unmatched`.
 
 ### Seed (`pnpm db:fresh`)
 
@@ -210,7 +253,7 @@ Deliberately absent in v1: `@anthropic-ai/sdk` (LLM extraction is optional and p
 ## 8. Related documents
 
 - [README.md](../README.md): quick start and commands
-- [methodology.md](methodology.md): ingestion stages and the quality stage in detail
+- [methodology.md](methodology.md): ingestion stages, the quality stage and the dedup stage in detail
 - [data-provenance.md](data-provenance.md): synthetic generator, sources, ground truth, defects
 - [PLAN.md](../PLAN.md): scope and acceptance criteria
 - `docs/recon/`: reference teardown notes (local only, gitignored in part)

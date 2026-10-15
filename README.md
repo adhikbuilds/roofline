@@ -61,6 +61,7 @@ Notes:
 | `pnpm db:seed` | Reference data plus the 26-week synthetic seed |
 | `pnpm db:check-drift` | Compare the database schema with the Drizzle definitions |
 | `pnpm --filter @roofline/ingest eval:quality` | Compare pipeline rejections with the planted defects |
+| `pnpm --filter @roofline/ingest eval:dedup` | Pairwise and B-cubed metrics of the dedup clustering against the planted units (also `pnpm eval:dedup`) |
 | `pnpm preflight` | Environment checks |
 | `pnpm screens` | Headless screenshot helper for `docs/screens/` |
 

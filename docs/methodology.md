@@ -1,16 +1,16 @@
 # Methodology
 
 **Last Updated:** 2026-10-16
-**Scope:** Roofline v1 ingestion pipeline (stages 1-4) and the data-quality stage in detail
-**Code:** `packages/engine/src/{normalize,locality,geo,stats,quality}/`, `packages/ingest/src/pipeline/`
+**Scope:** Roofline v1 ingestion pipeline (stages 1-5), the data-quality stage (stage 4) and the deduplication stage (stage 5) in detail
+**Code:** `packages/engine/src/{normalize,locality,geo,stats,quality,dedup}/`, `packages/ingest/src/pipeline/`
 
 Roofline keeps the engine pure. `@roofline/engine` has no I/O, no clock and no randomness; the pipeline in `@roofline/ingest` supplies the data. Every derived value is stamped with `ENGINE_VERSION` (`packages/engine/src/version.ts`, currently `0.0.1`).
 
 ## 1. Pipeline overview
 
 ```
-fetch -> store raw -> normalize -> canonicalize locality -> quality -> persist
- (1)        (1)          (2)              (3)               (4)         (persist)
+fetch -> store raw -> normalize -> canonicalize locality -> quality -> persist -> dedup
+ (1)        (1)          (2)              (3)               (4)         (persist)     (5)
 ```
 
 | Stage | Implemented in | Summary |
@@ -20,10 +20,11 @@ fetch -> store raw -> normalize -> canonicalize locality -> quality -> persist
 | 3. Canonicalize locality | `ingest/src/pipeline/locality.ts`, `engine/src/locality/` | Exact alias match, then Jaro-Winkler fuzzy match, then PostGIS nearest-centroid for rows whose text did not resolve or sits more than 3 km from its own geo |
 | 4. Quality | `ingest/src/pipeline/quality.ts`, `engine/src/quality/` | Unit repair, deposit parse, hard rules, then robust outlier test. See section 2 |
 | Persist | `ingest/src/pipeline/persist.ts` | `source_listings` with `quality_status`, `quality_reasons`, `quality_warnings`; accepted rows also become 1:1 placeholder `listings`; counts go to `ingest_runs.stats` |
+| 5. Dedup, identity, clusters | `ingest/src/pipeline/dedup.ts`, `engine/src/dedup/` | Block, score pairs, cluster under chaining guards, assign stable listing ids and redirects. See section 6 |
 
-Each weekly run is a single database transaction. All adapters' changed rows form one batch, so every source shares one statistical baseline.
+Each weekly run is a single database transaction. All adapters' changed rows form one batch, so every source shares one statistical baseline. Stage 5 runs after persist and delisting, inside the same transaction.
 
-Stages not yet built: deduplication, fair-rent model, deals, alerts and analytics refresh. They are planned for later phases and are not described in this document.
+Stages not yet built: fair-rent model, deals, alerts and analytics refresh. They are planned for later phases and are not described in this document.
 
 ## 2. Quality (stage 4)
 
@@ -196,3 +197,131 @@ Implemented in `engine/src/normalize/`. Each parser returns a value and flags, n
 - The engine is pure. The same inputs give the same outputs, and every derived row carries `ENGINE_VERSION`.
 - Synthetic data is generated from a fixed seed. See `data-provenance.md`.
 - Persisted quality results can be traced to their reason codes, warnings and the run that produced them through `ingest_runs.stats` (jsonb: counts per reason, warning and locality method, plus repair counts).
+
+## 6. Dedup (stage 5)
+
+Stage 5 groups accepted listings that describe the same unit, then gives each group a stable listing id. Code: `packages/engine/src/dedup/` (pure) and `packages/ingest/src/pipeline/dedup.ts` (reads and writes). The codemap is in `architecture.md`, section 2.
+
+### 6.1 Population and modes
+
+- A member is a `source_listings` row with `quality_status = 'accepted'` and `is_active`. Rejected and delisted rows never enter dedup.
+- Unit kinds: `rk` and `studio` share class `f0`; `bhk` maps to `f0`..`f5` (BHK capped at 5); `pg_bed` maps to `pg`. A `bhk` row without a BHK count has no class and is unblockable (never compared).
+- Incremental mode (default) scores only the blocks touched by dirty rows. A row is dirty if it is new, its content changed, or it was not a member before. Clusters touched by a dirty row, plus the stored raw-match edges they depend on, are re-clustered together. The result equals a full rebuild.
+- Full mode (`roofline-ingest run --full`, or any run after `ENGINE_VERSION` changes) rescores every block and re-assigns every identity.
+
+### 6.2 Blocking
+
+Blocking limits which pairs are scored. Implemented in `blocking.ts`, with the constants in `BLOCKING`.
+
+- **Geo cell.** Rows with coordinates use a geohash of precision 6 (roughly 1.2 km by 0.6 km).
+- **Rent band.** `floor(ln(rent) / ln(1.25))`, so bands are 25% wide on a log scale.
+- **Index keys.** Every row is indexed under its locality key `la:<locality>|<class>|<band>`, plus `g:<cell>|<class>|<band>` if it has coordinates, or `l0:<locality>|<class>|<band>` if it does not.
+- **Probe keys.** A row with coordinates probes its cell and its 8 neighbours across the bands at -1, 0 and +1 (27 keys), plus 3 locality keys. A row without coordinates probes its 3 locality keys only.
+- A pair is a candidate when the two rows share at least one key. Candidate pairs are de-duplicated and sorted, so runs are reproducible.
+
+### 6.3 Gates (hard exclusions)
+
+`gate()` in `similarity.ts` rules a pair out before scoring. The first failing gate is the reason.
+
+| Gate | Condition |
+|---|---|
+| `SAME_ROW` | Same `source_id` and `source_listing_id` |
+| `CLASS` | Unit class missing on either side, or classes differ |
+| `PG_SHARING` | Both PG rows have sharing and they differ |
+| `PG_GENDER` | Both PG rows have a gender and they differ |
+| `LOCALITY` | One side has no coordinates and the localities differ |
+| `GEO_FAR` | Distance above 1,000 m |
+| `RENT_FAR` | Higher rent > 1.25 x lower rent (`4 x hi > 5 x lo`, in integers) |
+
+### 6.4 Features and weights
+
+Each feature is in [0, 1]. Constants are in `SIMILARITY`.
+
+| Feature | Formula | Missing value |
+|---|---|---|
+| `geo` | 1 at or below 150 m, 0 at or above 800 m, linear between | Feature absent (see below) |
+| `rent` | `1 - min(1, abs(a - b) / (0.10 x max(a, b)))` | Not missing (both rents are required) |
+| `area` | 1 at relative difference 3% or less, 0 at 15% or more, linear between | 0.5 |
+| `title` | Jaccard of title tokens | 0.5 |
+| `photos` | 1 at minimum Hamming distance 6 or less, 0 at 16 or more, linear between | 0.5 |
+
+Photos are 64-bit dHash values (`dhash.ts`). The distance is the minimum Hamming distance over all cross pairs of photos.
+
+Weights: geo 0.20, rent 0.15, area 0.15, title 0.15, photos 0.35.
+
+- With coordinates on both sides, the score is the weighted sum (weights sum to 1).
+- Without coordinates on either side, the geo term is dropped and the other four weights are renormalised over 0.80.
+- Penalties subtract 0.15 each for a floor mismatch and a furnishing mismatch (only when both values are known). The score is clamped to [0, 1].
+
+### 6.5 Thresholds and caps
+
+| Score | Raw decision |
+|---|---|
+| >= 0.70 | `match` |
+| >= 0.62 and < 0.70 | `possible` |
+| < 0.62 | none (not stored) |
+
+Caps limit a pair to `possible` even above 0.70:
+
+- `NO_PHOTOS`: neither side has a usable photo hash.
+- `SAME_SOURCE_PHOTOS`: both rows come from the same source and their photo similarity is below 0.90. One source rarely lists the same unit twice, so a same-source match needs strong photo evidence.
+
+Scored pairs are written to `dedup_pairs` (admin role only) with their score, features and decision. Only `match` edges go into clustering. `possible` pairs are kept for review and are not merged.
+
+### 6.6 Chaining guards
+
+Single-link clustering can chain distinct units: A matches B and B matches C, so A, B and C merge even when A and C are far apart. The guards in `cluster.ts` (`GUARDS`) stop that.
+
+| Guard | Violation |
+|---|---|
+| `GEO_SPAN` | Two members more than 1,000 m apart |
+| `RENT_SPREAD` | Max rent > 1.25 x min rent across members |
+| `SOURCE_DUP` | Two members from the same source with no strong edge (photo similarity >= 0.90) between them |
+| `SIZE` | More than 8 members |
+
+Clustering runs in two phases:
+
+1. Connected components over the `match` edges (union-find, de-duplicated edges, highest score first).
+2. For a component that violates any guard, a guarded Kruskal rebuild: edges are added in score order, and an edge is kept only if the merged set passes every guard. A rejected edge is recorded as a `guard_split` with the first failing guard. The stored decision becomes `guard_split` with `features.guard` set.
+
+Components that pass all guards are kept as they are.
+
+### 6.7 Identity and redirects
+
+Each cluster gets one `listings.id`. `assignIdentities()` in `canonical.ts` matches clusters to the previous listings.
+
+- **Inheritance.** For each (previous listing, new cluster) pair, count the previous members that now sit in the cluster (overlap). Pairs are taken greedily by overlap, then by the earlier `first_seen_at` of the previous listing, then by id. A previous listing is inherited by at most one cluster, and a cluster inherits at most one listing.
+- **Minting.** A cluster with no inherited listing gets a new id from `uuidFor('listing', '<sourceId>:<sourceListingId>')` of its seed row. If the id is taken, the attempt number increases.
+- **Redirects.** A previous listing that is not inherited is redirected to the cluster that takes most of its members (ties: earlier cluster `first_seen_at`, then lower id). Redirects go to `listing_redirects`. A previous listing with no surviving member is orphaned.
+- **Canonical row.** Within a cluster, the canonical source row is the most complete: completeness is the sum of min(photos, 3), area, deposit, maintenance, furnishing and valid geo (0 to 8). Ties go to the incumbent (the current canonical row), then the latest `last_seen_at`, then the lower source priority, then id.
+
+### 6.8 Measured metrics
+
+`pnpm --filter @roofline/ingest eval:dedup` compares the stored clustering with `seed_truth.source_rows.unit_id`. The population is accepted and active members with a truth row. Predicted clusters are `source_listings.listing_id`.
+
+| Metric | Definition | Threshold |
+|---|---|---|
+| Pairwise precision | Same-listing pairs that are also same-unit, over all same-listing pairs | >= 0.98 |
+| Pairwise recall | Same-unit pairs that share a listing, over all same-unit pairs | >= 0.92 |
+| B-cubed F1 | Harmonic mean of per-row B-cubed precision and recall | >= 0.95 |
+| Hard-negative merges | Planted hard negatives sharing a listing with a different unit | must be 0 (150 evaluated) |
+| Blocking recall | Share of gate-eligible true pairs that share a blocking key | >= 0.995 |
+
+Measured output on the local seeded database (run 2026-10-16, seed `20261001`):
+
+```
+members=3898 true_pairs=831 predicted_pairs=784 tp=784
+pairwise_precision=1.0000 (>= 0.98)
+pairwise_recall=0.9434 (>= 0.92)
+bcubed_precision=1.0000 bcubed_recall=0.9883 bcubed_f1=0.9941 (>= 0.95)
+hard_negatives_evaluated=150 (must be 150) hard_negative_merges=0 (must be 0)
+blocking_recall=1.0000 over 825 gate-eligible true pairs (>= 0.995); blocking_recall_all_pairs=0.9988 over 831 gated_away=6 possible_pairs=41
+eval:dedup OK
+```
+
+Reading the numbers:
+
+- Precision is perfect on this seed: no two different units share a listing. The hard negatives (distinct units that look alike) are never merged.
+- Recall is 0.9434, so 47 of the 831 true pairs are not clustered together. The eval does not attribute these to a cause. They are split by a gate or guard, or scored below 0.70, and the eval output does not say which.
+- Blocking loses no gate-eligible true pair. The 6 true pairs that a gate rules out are reported apart (`gated_away`) and are not counted against blocking.
+- 41 pairs sit in the `possible` band and are not merged.

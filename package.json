@@ -26,6 +26,7 @@
     "db:fresh": "pnpm db:reset && pnpm db:migrate && pnpm db:seed",
     "db:check-drift": "pnpm --filter @roofline/db check-drift",
     "ingest:run": "pnpm --filter @roofline/ingest cli run",
+    "eval:dedup": "pnpm --filter @roofline/ingest eval:dedup",
     "test:scripts": "vitest run --root scripts"
   },
   "devDependencies": {

@@ -5,9 +5,11 @@
  */
 import { ENGINE_VERSION } from '@roofline/engine';
 import type { RawListing, SourceAdapter } from '../adapter';
+import { sourceListingUuid } from '../ids';
 import type { Db } from './db';
 import { canonicalizeLocality, loadRefData } from './locality';
 import { normalizeRaw } from './normalize';
+import { runDedup } from './dedup';
 import { delistMissing, persistDrafts, touchSeen } from './persist';
 import { assessDrafts, loadPriorAccepted } from './quality';
 import { storeRaw } from './raw';
@@ -16,7 +18,7 @@ import type { Draft, RefData, RunResult, RunStats } from './types';
 const emptyStats = (): RunStats => ({
   fetched: 0, unchanged: 0, raw_stored: 0, processed: 0, accepted: 0, rejected: 0, reasons: {}, warnings: {},
   locality: {}, repaired: { unit: 0, annual: 0 }, extracted_by_rules: 0, delisted: 0, listings_upserted: 0,
-  price_observations: 0, batch_size: 0,
+  price_observations: 0, batch_size: 0, raw_inserted: 0, listings_changed: 0,
 });
 const bump = (m: Record<string, number>, k: string): void => {
   m[k] = (m[k] ?? 0) + 1;
@@ -24,6 +26,8 @@ const bump = (m: Record<string, number>, k: string): void => {
 
 export interface RunWeekOptions {
   ref?: RefData;
+  /** Rescore every block and re-assign identities against all listings (stage 5). */
+  full?: boolean;
   /** Report progress; defaults to silent. */
   log?: (line: string) => void;
 }
@@ -39,6 +43,9 @@ export async function runWeek(db: Db, adapters: SourceAdapter[], asOf: Date, opt
   await db.query('BEGIN');
   try {
     const ref = opts.ref ?? (await loadRefData(db));
+    const priorMembers = new Set(
+      (await db.query<{ id: string }>(`SELECT id FROM source_listings WHERE quality_status = 'accepted' AND is_active`)).rows.map((r) => r.id),
+    );
     const statsByRun = new Map<number, RunStats>();
     const results: Array<{ sourceId: string; runId: number }> = [];
     const drafts: Draft[] = [];
@@ -59,6 +66,7 @@ export async function runWeek(db: Db, adapters: SourceAdapter[], asOf: Date, opt
       stats.fetched = raw.fetched;
       stats.unchanged = raw.unchangedIds.length;
       stats.raw_stored = raw.changed.length;
+      stats.raw_inserted = raw.changed.length;
       await touchSeen(db, adapter.id, raw.unchangedIds, asOf);
       seen.push({ sourceId: adapter.id, ids: raw.seenIds });
 
@@ -97,7 +105,19 @@ export async function runWeek(db: Db, adapters: SourceAdapter[], asOf: Date, opt
     const persisted = await persistDrafts(db, drafts, asOf);
     for (const s of seen) {
       const run = results.find((r) => r.sourceId === s.sourceId) as { runId: number };
-      (statsByRun.get(run.runId) as RunStats).delisted = await delistMissing(db, s.sourceId, s.ids);
+      (statsByRun.get(run.runId) as RunStats).delisted = (await delistMissing(db, s.sourceId, s.ids)).length;
+    }
+
+    // stage 5: dedup, identity, listings
+    if (results.length > 0) {
+      const acceptedDraftIds = new Set(drafts.filter((d) => d.status === 'accepted').map((d) => sourceListingUuid(d.sourceId, d.sourceListingId)));
+      const dedup = await runDedup(db, { asOf, runs: results, priorMemberIds: priorMembers, acceptedDraftIds, full: opts.full ?? false, log: opts.log });
+      const lowest = Math.min(...results.map((r) => r.runId));
+      for (const r of results) {
+        const s = statsByRun.get(r.runId) as RunStats;
+        s.dedup = r.runId === lowest ? dedup : { see_run: lowest };
+        s.listings_changed = r.runId === lowest ? dedup.listings_changed : 0;
+      }
     }
     for (const r of results) {
       const stats = statsByRun.get(r.runId) as RunStats;
