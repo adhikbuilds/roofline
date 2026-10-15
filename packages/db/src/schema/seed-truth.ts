@@ -1,7 +1,8 @@
 // Eval ground truth (seed_truth schema). Deliberately NOT re-exported from schema/index.ts or the
 // package root: only ingest, eval and check-drift import it, via '@roofline/db/seed-truth'.
-import { integer, numeric, pgSchema, primaryKey, smallint, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { bigint, integer, jsonb, numeric, pgSchema, primaryKey, smallint, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { furnishing, unitKind } from './enums.js';
+import { modelRuns } from './listings.js';
 import { localities, sources } from './reference.js';
 
 /** Eval ground truth. roofline_app has no grants here; only the admin role touches it. */
@@ -42,4 +43,11 @@ export const stTrueDeals = seedTruth.table('true_deals', {
   unitId: uuid('unit_id').primaryKey().references(() => stUnits.unitId),
   kind: text('kind').notNull(),
   rentMultiplier: numeric('rent_multiplier', { precision: 4, scale: 2 }).notNull(),
+});
+
+/** Truth-derived model metrics (CV vs truth, deal-eval numbers). Kept out of model_runs.metrics, which the web role can read. */
+export const stModelRunEval = seedTruth.table('model_run_eval', {
+  modelRunId: bigint('model_run_id', { mode: 'number' }).primaryKey().references(() => modelRuns.id, { onDelete: 'cascade' }),
+  metrics: jsonb('metrics').notNull().default({}),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });

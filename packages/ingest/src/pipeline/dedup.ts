@@ -383,6 +383,24 @@ export async function runDedup(db: Db, input: DedupInput): Promise<DedupStats> {
   }
 
   // ---- write: listings upsert (only rows that actually differ) ----
+  // A verdict (fair_*, badge, confidence, is_deal, deal_*, provenance) describes the inputs it was scored on. When any
+  // scored input of the stored row differs from the incoming one, the verdict is reset to the no-estimate state in the
+  // same statement; stage 6-7 rewrite it on the next model fit. Rows whose scored inputs are unchanged keep theirs.
+  const scoredInputsChanged = `(listings.canonical_source_listing_id, listings.unit_kind, listings.bhk, listings.rent_inr,
+         listings.deposit_inr, listings.area_sqft, listings.furnishing, listings.locality_id, listings.pg_sharing,
+         listings.pg_food_included, listings.photo_seeds, listings.source_count, listings.rent_min_inr, listings.rent_max_inr,
+         listings.first_seen_at)
+       IS DISTINCT FROM
+        (EXCLUDED.canonical_source_listing_id, EXCLUDED.unit_kind, EXCLUDED.bhk, EXCLUDED.rent_inr,
+         EXCLUDED.deposit_inr, EXCLUDED.area_sqft, EXCLUDED.furnishing, EXCLUDED.locality_id, EXCLUDED.pg_sharing,
+         EXCLUDED.pg_food_included, EXCLUDED.photo_seeds, EXCLUDED.source_count, EXCLUDED.rent_min_inr, EXCLUDED.rent_max_inr,
+         EXCLUDED.first_seen_at)`;
+  const keepUnlessChanged = (col: string, cleared: string): string =>
+    `${col} = CASE WHEN ${scoredInputsChanged} THEN ${cleared} ELSE listings.${col} END`;
+  const verdictReset = [
+    'fair_rent_inr', 'fair_low_inr', 'fair_high_inr', 'fair_delta_pct', 'badge', 'confidence', 'fair_explanation',
+    'fair_model_run_id', 'fair_engine_version', 'deal_score', 'deal_reason',
+  ].map((c) => keepUnlessChanged(c, 'NULL')).concat(keepUnlessChanged('is_deal', 'false')).join(',\n         ');
   let listingsChanged = 0;
   await chunked(views, 500, async (part) => {
     const res = await db.query(
@@ -406,7 +424,8 @@ export async function runDedup(db: Db, input: DedupInput): Promise<DedupStats> {
          deposit_inr = EXCLUDED.deposit_inr, area_sqft = EXCLUDED.area_sqft, furnishing = EXCLUDED.furnishing,
          locality_id = EXCLUDED.locality_id, geom = EXCLUDED.geom, pg_sharing = EXCLUDED.pg_sharing,
          pg_food_included = EXCLUDED.pg_food_included, pg_gender = EXCLUDED.pg_gender, photo_seeds = EXCLUDED.photo_seeds,
-         first_seen_at = EXCLUDED.first_seen_at, last_price_change_at = EXCLUDED.last_price_change_at, is_active = true
+         first_seen_at = EXCLUDED.first_seen_at, last_price_change_at = EXCLUDED.last_price_change_at, is_active = true,
+         ${verdictReset}
        WHERE (listings.canonical_source_listing_id, listings.member_count, listings.source_count, listings.source_ids,
               listings.rent_min_inr, listings.rent_max_inr, listings.unit_kind, listings.bhk, listings.rent_inr,
               listings.deposit_inr, listings.area_sqft, listings.furnishing, listings.locality_id,

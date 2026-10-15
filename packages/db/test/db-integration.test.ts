@@ -34,7 +34,7 @@ describe('migrations 0002-0004', () => {
     const s = await client.query<{ table_name: string }>(
       "SELECT table_name FROM information_schema.tables WHERE table_schema='seed_truth'",
     );
-    expect(s.rows.map((x) => x.table_name).sort()).toEqual(['source_rows', 'true_deals', 'true_rent', 'units']);
+    expect(s.rows.map((x) => x.table_name).sort()).toEqual(['model_run_eval', 'source_rows', 'true_deals', 'true_rent', 'units']);
   });
 
   it('create GIST indexes on geography columns', async () => {

@@ -5,6 +5,10 @@ export interface CliDeps {
   run(week: number, log: (m: string) => void, opts?: { full?: boolean }): Promise<void>;
   evalQuality(): Promise<{ ok: boolean; lines: string[] }>;
   evalDedup(): Promise<{ ok: boolean; lines: string[] }>;
+  /** Stages 6-7: fit both models, pick the active one, write estimates and deals. */
+  modelFit(opts: { asOf?: string; windowDays?: number }, log: (m: string) => void): Promise<void>;
+  evalFairRent(): Promise<{ ok: boolean; lines: string[] }>;
+  evalDeals(): Promise<{ ok: boolean; lines: string[] }>;
 }
 
 const WEEKS = 26;
@@ -36,7 +40,41 @@ const defaultDeps: CliDeps = {
         log(`reference: ${counts.localities} localities, ${counts.aliases} aliases, ${counts.sources} sources`);
         const out = await seedSynthetic(client, log);
         log(`seeded ${out.runs} ingest runs over ${out.weeks} weeks (${out.rows} source rows, ${out.units} units)`);
+        // stages 6-7 on the final week, so a fresh database already carries fair rents and deals
+        const { runModelStages } = await import('./pipeline/fairrent');
+        const { engineModels } = await import('./pipeline/models');
+        await runModelStages(client, { models: engineModels(), log });
       });
+    } finally {
+      await close();
+    }
+  },
+  async modelFit(opts, log) {
+    const { withAdmin, close } = await import('@roofline/db');
+    const { runModelStages } = await import('./pipeline/fairrent');
+    const { engineModels } = await import('./pipeline/models');
+    try {
+      await withAdmin((client) =>
+        runModelStages(client, { models: engineModels(), asOf: opts.asOf ? new Date(`${opts.asOf}T00:00:00Z`) : undefined, windowDays: opts.windowDays, log }),
+      );
+    } finally {
+      await close();
+    }
+  },
+  async evalFairRent() {
+    const { withAdmin, close } = await import('@roofline/db');
+    const { evalFairRent } = await import('./eval/fairrent-eval');
+    try {
+      return await withAdmin((client) => evalFairRent(client));
+    } finally {
+      await close();
+    }
+  },
+  async evalDeals() {
+    const { withAdmin, close } = await import('@roofline/db');
+    const { evalDeals } = await import('./eval/deals-eval');
+    try {
+      return await withAdmin((client) => evalDeals(client));
     } finally {
       await close();
     }
@@ -103,6 +141,21 @@ export function buildProgram(log: (msg: string) => void = (m) => console.log(m),
     .description('Load reference data and the synthetic Bangalore seed (26 weekly runs)')
     .action(async () => deps.seed(log));
 
+  const model = program.command('model').description('Fair-rent models (pipeline stages 6-7)');
+  model
+    .command('fit')
+    .description('Fit both models with 5-fold CV, choose the active one, write estimates and deals')
+    .option('--as-of <date>', 'fit as of this date, YYYY-MM-DD (default: latest ingest run)')
+    .option('--window-days <n>', 'only fit listings first seen within n days of as-of', (v: string) => {
+      const n = Number(v);
+      if (!Number.isInteger(n) || n < 1) throw new InvalidArgumentError('window-days must be a positive integer');
+      return n;
+    })
+    .action(async (opts: { asOf?: string; windowDays?: number }) => {
+      if (opts.asOf !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(opts.asOf)) throw new InvalidArgumentError('as-of must be YYYY-MM-DD');
+      await deps.modelFit(opts, log);
+    });
+
   const ev = program.command('eval').description('Run ingestion evals');
   ev.command('quality')
     .description('planted_rejects / matched / extra_rejects against seed_truth')
@@ -115,6 +168,20 @@ export function buildProgram(log: (msg: string) => void = (m) => console.log(m),
     .description('pairwise P/R, B-cubed F1, hard_negative_merges and blocking_recall against seed_truth')
     .action(async () => {
       const res = await deps.evalDedup();
+      for (const line of res.lines) log(line);
+      if (!res.ok) process.exitCode = 1;
+    });
+  ev.command('fairrent')
+    .description('active model mdape vs truth and interval coverage; both models printed')
+    .action(async () => {
+      const res = await deps.evalFairRent();
+      for (const line of res.lines) log(line);
+      if (!res.ok) process.exitCode = 1;
+    });
+  ev.command('deals')
+    .description('deal precision / recall vs seed_truth.true_deals and the too_good guard')
+    .action(async () => {
+      const res = await deps.evalDeals();
       for (const line of res.lines) log(line);
       if (!res.ok) process.exitCode = 1;
     });

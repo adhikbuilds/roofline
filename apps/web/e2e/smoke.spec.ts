@@ -13,7 +13,14 @@ test('home shows the brand shell and the demo-data notice', async ({ page }) => 
 test('health endpoint reports ok', async ({ request }) => {
   const res = await request.get('/api/health');
   expect(res.ok()).toBe(true);
-  expect((await res.json()).ok).toBe(true);
+  const body = await res.json();
+  expect(Object.keys(body).sort()).toEqual(['dataMode', 'dataVersion', 'db', 'engineVersion', 'ok']);
+  expect(body.ok).toBe(true);
+  expect(body.db).toBe(true);
+  expect(typeof body.engineVersion).toBe('string');
+  expect(body.dataMode).toBe('synthetic');
+  // the active model run id (stages 6-7 run in db:fresh)
+  expect(Number.isInteger(body.dataVersion)).toBe(true);
 });
 
 for (const route of ROUTES) {

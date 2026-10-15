@@ -27,6 +27,9 @@
     "db:check-drift": "pnpm --filter @roofline/db check-drift",
     "ingest:run": "pnpm --filter @roofline/ingest cli run",
     "eval:dedup": "pnpm --filter @roofline/ingest eval:dedup",
+    "eval:fairrent": "pnpm --filter @roofline/ingest cli eval fairrent",
+    "eval:deals": "pnpm --filter @roofline/ingest cli eval deals",
+    "model:fit": "pnpm --filter @roofline/ingest cli model fit",
     "test:scripts": "vitest run --root scripts"
   },
   "devDependencies": {

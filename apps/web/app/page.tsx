@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { formatINR } from '@roofline/engine';
+import { FairBadge, FairnessRuler } from '@/components/fair/FairnessRuler';
+import { NOT_ENOUGH_COMPS_COPY } from '@/lib/fairness';
 import { getLedger, getListings, parsePage, type ListingRow } from '@/lib/queries';
 
 export const dynamic = 'force-dynamic';
@@ -111,7 +113,17 @@ function ListingItem({ l }: { l: ListingRow }) {
           {l.areaSqft ? `, ${l.areaSqft.toLocaleString('en-IN')} sq ft` : ''}
         </div>
       </div>
-      <div className="figures text-right text-[14px] text-indigo-2">
+      <div className="order-last flex min-h-[44px] basis-full flex-col items-start justify-center gap-1.5 md:order-none md:basis-auto">
+        {l.fair?.badge ? (
+          <>
+            <FairBadge fair={l.fair} />
+            <FairnessRuler rentInr={l.rentInr} fair={l.fair} />
+          </>
+        ) : (
+          <span data-testid="no-verdict" className="text-[13px] text-indigo-2">{NOT_ENOUGH_COMPS_COPY}</span>
+        )}
+      </div>
+      <div className="figures text-[14px] text-indigo-2 md:text-right">
         <div>{l.moveInInr == null ? 'Move-in cost not stated' : `${formatINR(l.moveInInr)} move-in`}</div>
         <div>{l.sourceCount === 1 ? '1 source' : `${l.sourceCount} sources`}</div>
       </div>

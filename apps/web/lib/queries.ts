@@ -6,6 +6,8 @@
 
 import { resolveRedirect, type HistoryPoint, type Resolution } from './listing-detail';
 import { PLATE_SEED } from './plate';
+import { toFairInfo, type FairInfo } from './fairness';
+import type { DealFilters } from './deals-filters';
 
 export const PAGE_SIZE = 40;
 
@@ -20,9 +22,18 @@ export type ListingRow = {
   areaSqft: number | null;
   sourceCount: number;
   localityName: string;
+  fair: FairInfo | null;
 };
 export type ListingPage = { rows: ListingRow[]; page: number; hasNext: boolean };
 export type LocalityRow = { slug: string; name: string; zone: string; listings: number; median2bhkRent: number | null };
+
+type FairCols = {
+  fair_rent_inr: number | null; fair_low_inr: number | null; fair_high_inr: number | null; fair_delta_pct: number | null;
+  badge: string | null; confidence: string | null; fair_explanation: string | null;
+  fair_model_run_id: number | string | null; fair_engine_version: string | null;
+};
+const FAIR_SELECT =
+  'l.fair_rent_inr, l.fair_low_inr, l.fair_high_inr, l.fair_delta_pct, l.badge::text AS badge, l.confidence::text AS confidence, l.fair_explanation, l.fair_model_run_id, l.fair_engine_version';
 
 const EMPTY_LEDGER: Ledger = { listings: 0, sources: 0, merged: 0, rejected: 0 };
 
@@ -67,9 +78,9 @@ export async function getListings(page: number): Promise<ListingPage> {
     const rows = await query<{
       id: string; rent_inr: number; deposit_inr: number | null; move_in_inr: number | null; bhk: number | null;
       unit_kind: string; area_sqft: number | null; source_count: number; locality_name: string;
-    }>(
+    } & FairCols>(
       `SELECT l.id, l.rent_inr, l.deposit_inr, l.move_in_inr, l.bhk, l.unit_kind, l.area_sqft, l.source_count,
-              loc.name AS locality_name
+              loc.name AS locality_name, ${FAIR_SELECT}
          FROM listings l JOIN localities loc ON loc.id = l.locality_id
         WHERE l.is_active
         ORDER BY l.first_seen_at DESC, l.id
@@ -89,6 +100,7 @@ export async function getListings(page: number): Promise<ListingPage> {
         areaSqft: r.area_sqft,
         sourceCount: r.source_count,
         localityName: r.locality_name,
+        fair: toFairInfo(r),
       })),
     };
   } catch {
@@ -134,6 +146,7 @@ export type ListingDetail = {
   plateSeeds: string[];
   sources: ListingSource[];
   history: HistoryPoint[];
+  fair: FairInfo | null;
 };
 
 /** Is this id a live listing, an old id that redirects to one (max 3 hops), or unknown? Failures read as unknown. */
@@ -155,9 +168,9 @@ export async function getListingDetail(id: string): Promise<ListingDetail | null
       id: string; rent_inr: number; deposit_inr: number | null; move_in_inr: number | null; unit_kind: string;
       bhk: number | null; area_sqft: number | null; furnishing: string | null; source_count: number;
       photo_seeds: string[]; locality_name: string; canonical: string;
-    }>(
+    } & FairCols>(
       `SELECT l.id, l.rent_inr, l.deposit_inr, l.move_in_inr, l.unit_kind, l.bhk, l.area_sqft, l.furnishing::text AS furnishing,
-              l.source_count, l.photo_seeds, loc.name AS locality_name, l.canonical_source_listing_id AS canonical
+              l.source_count, l.photo_seeds, loc.name AS locality_name, l.canonical_source_listing_id AS canonical, ${FAIR_SELECT}
          FROM listings l JOIN localities loc ON loc.id = l.locality_id
         WHERE l.id = $1 AND l.is_active`,
       [id],
@@ -190,8 +203,64 @@ export async function getListingDetail(id: string): Promise<ListingDetail | null
       plateSeeds: l.photo_seeds.filter((x) => PLATE_SEED.test(x)),
       sources: sources.map((r) => ({ sourceId: r.source_id, sourceName: r.display_name, rentInr: r.rent_inr, depositInr: r.deposit_inr })),
       history: history.map((h) => ({ at: new Date(h.observed_at).toISOString(), rentInr: h.rent_inr })),
+      fair: toFairInfo(l),
     };
   } catch {
     return null;
+  }
+}
+
+export type DealRow = {
+  id: string;
+  rentInr: number;
+  bhk: number | null;
+  unitKind: string;
+  areaSqft: number | null;
+  localityName: string;
+  score: number;
+  reason: string;
+  fair: FairInfo;
+};
+export type DealLocality = { slug: string; name: string };
+
+export const DEALS_LIMIT = 60;
+
+/** Ranked by the stored deal score. Filters are already validated; they still go in as parameters. */
+export async function getDeals(f: DealFilters): Promise<DealRow[]> {
+  try {
+    const rows = await query<{
+      id: string; rent_inr: number; bhk: number | null; unit_kind: string; area_sqft: number | null;
+      locality_name: string; deal_score: number; deal_reason: string;
+    } & FairCols>(
+      `SELECT l.id, l.rent_inr, l.bhk, l.unit_kind, l.area_sqft, loc.name AS locality_name, l.deal_score, l.deal_reason, ${FAIR_SELECT}
+         FROM listings l JOIN localities loc ON loc.id = l.locality_id
+        WHERE l.is_active AND l.is_deal AND l.deal_reason IS NOT NULL
+          AND ($1::text IS NULL OR loc.slug = $1)
+          AND ($2::int IS NULL OR (l.unit_kind = 'bhk' AND l.bhk = $2))
+        ORDER BY l.deal_score DESC NULLS LAST, l.id
+        LIMIT $3`,
+      [f.locality, f.bhk, DEALS_LIMIT],
+    );
+    return rows.flatMap((r) => {
+      const fair = toFairInfo(r);
+      return fair
+        ? [{ id: r.id, rentInr: r.rent_inr, bhk: r.bhk, unitKind: r.unit_kind, areaSqft: r.area_sqft, localityName: r.locality_name, score: r.deal_score, reason: r.deal_reason, fair }]
+        : [];
+    });
+  } catch {
+    return [];
+  }
+}
+
+/** Localities that currently have at least one deal; the filter offers only these. */
+export async function getDealLocalities(): Promise<DealLocality[]> {
+  try {
+    return await query<DealLocality>(
+      `SELECT loc.slug, loc.name FROM localities loc
+        WHERE EXISTS (SELECT 1 FROM listings l WHERE l.locality_id = loc.id AND l.is_active AND l.is_deal)
+        ORDER BY loc.name`,
+    );
+  } catch {
+    return [];
   }
 }

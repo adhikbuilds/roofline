@@ -40,6 +40,8 @@ export const listings = pgTable(
     badge: fairBadge('badge'),
     confidence: fairConfidence('confidence'),
     fairExplanation: text('fair_explanation'),
+    fairModelRunId: bigint('fair_model_run_id', { mode: 'number' }).references(() => modelRuns.id, { onDelete: 'set null' }),
+    fairEngineVersion: text('fair_engine_version'),
     isDeal: boolean('is_deal').notNull().default(false),
     dealScore: real('deal_score'),
     dealReason: text('deal_reason'),

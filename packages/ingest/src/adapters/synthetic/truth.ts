@@ -4,6 +4,29 @@ import { driftAt, type SeedDataset } from './generate';
 
 const CHUNK = 5000;
 
+/**
+ * Ground-truth deal rule. A unit is a true deal at as-of T when its canonical observed rent at T is
+ * <= 0.80 x its true expected rent at T and >= 0.45 x (so the x0.30 'too_good' plants are non-deals by
+ * construction). The label set is DERIVED inside eval:deals from seed_truth.true_rent, seed_truth.true_deals
+ * and the listings table, so no derived truth is ever written to a web-readable table, and
+ * seed_truth.true_deals keeps holding only the generator's plants (kind 'deal' | 'too_good').
+ * The 'natural' kind exists only in the derived set: units under the band that were not planted.
+ */
+export const DEAL_BAND = { maxRatio: 0.8, minRatio: 0.45 } as const;
+/** Same band as integer percents, for exact SQL / integer arithmetic. */
+export const DEAL_BAND_PCT = { max: 80, min: 45 } as const;
+
+export type TrueDealKind = 'deal' | 'natural';
+
+/** Exact (integer) boundary-inclusive labelling. Returns null for a non-deal. */
+export function labelTrueDeal(x: { observedRent: number; trueRent: number; planted?: 'deal' | 'too_good' }): TrueDealKind | null {
+  const { observedRent: o, trueRent: t } = x;
+  if (x.planted === 'too_good') return null;
+  if (!Number.isFinite(o) || !Number.isFinite(t) || o <= 0 || t <= 0) return null;
+  if (o * 100 > DEAL_BAND_PCT.max * t || o * 100 < DEAL_BAND_PCT.min * t) return null;
+  return x.planted === 'deal' ? 'deal' : 'natural';
+}
+
 async function bulk(db: Db, sql: string, records: unknown[]): Promise<void> {
   for (let i = 0; i < records.length; i += CHUNK) await db.query(sql, [JSON.stringify(records.slice(i, i + CHUNK))]);
 }

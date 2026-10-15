@@ -1,8 +1,8 @@
 # Methodology
 
 **Last Updated:** 2026-10-16
-**Scope:** Roofline v1 ingestion pipeline (stages 1-5), the data-quality stage (stage 4) and the deduplication stage (stage 5) in detail
-**Code:** `packages/engine/src/{normalize,locality,geo,stats,quality,dedup}/`, `packages/ingest/src/pipeline/`
+**Scope:** Roofline v1 ingestion pipeline (stages 1-5), the data-quality stage (stage 4) and the deduplication stage (stage 5) in detail. Fair rent (stage 6) and deals (stage 7) are in sections 7 and 8.
+**Code:** `packages/engine/src/{normalize,locality,geo,stats,quality,dedup,fairrent,deals}/`, `packages/ingest/src/pipeline/`
 
 Roofline keeps the engine pure. `@roofline/engine` has no I/O, no clock and no randomness; the pipeline in `@roofline/ingest` supplies the data. Every derived value is stamped with `ENGINE_VERSION` (`packages/engine/src/version.ts`, currently `0.0.1`).
 
@@ -24,7 +24,7 @@ fetch -> store raw -> normalize -> canonicalize locality -> quality -> persist -
 
 Each weekly run is a single database transaction. All adapters' changed rows form one batch, so every source shares one statistical baseline. Stage 5 runs after persist and delisting, inside the same transaction.
 
-Stages not yet built: fair-rent model, deals, alerts and analytics refresh. They are planned for later phases and are not described in this document.
+Stage 6 (fair rent) and stage 7 (deals) run after the weekly ingest, through `pnpm model:fit`. They are described in sections 7 and 8. Alerts and analytics refresh are not built yet.
 
 ## 2. Quality (stage 4)
 
@@ -325,3 +325,146 @@ Reading the numbers:
 - Recall is 0.9434, so 47 of the 831 true pairs are not clustered together. The eval does not attribute these to a cause. They are split by a gate or guard, or scored below 0.70, and the eval output does not say which.
 - Blocking loses no gate-eligible true pair. The 6 true pairs that a gate rules out are reported apart (`gated_away`) and are not counted against blocking.
 - 41 pairs sit in the `possible` band and are not merged.
+
+## 7. Fair rent (stage 6)
+
+Stage 6 estimates what each active listing should rent for, then turns the gap between asking rent and that estimate into a badge. Code: `packages/engine/src/fairrent/` (pure) and `packages/ingest/src/pipeline/fairrent.ts` (fit set, writes, orchestration). Stage 7 (section 8) runs inside the same transaction.
+
+### 7.1 Status
+
+- **Built:** the robust-median model (v1) in `robust-median.ts`, the shared types, the explanation text (`explain.ts`), badge bins (`badge.ts`), and the hedonic building blocks in `hedonic.ts` (sparse design matrix, ridge Huber IRLS, exact leave-one-out).
+- **Not yet built:** the hedonic fit and predict functions, the cross-validation routine, and their engine exports. `packages/ingest/src/pipeline/models.ts` imports `crossValidate`, `fitHedonic` and `predictHedonic` from `@roofline/engine`, and those exports do not exist yet. Stage 6 cannot run until they do.
+- **Measured metrics:** none recorded. On the local database (run 2026-10-16) `pnpm eval:fairrent` reports `no active model run`, and `pnpm eval:deals` reports `deals=0`. The numbers will be added here after the first `pnpm model:fit` that completes.
+
+### 7.2 Fit set and units
+
+- Fit set: active listings whose canonical member is accepted, first seen on or before `asOf` (the latest successful ingest run). An optional window limits this to listings first seen within `windowDays`.
+- A flat is one of `rk`, `studio` or `bhk`. A `bhk` unit with no BHK count is skipped and receives no estimate. PG beds are modelled separately (section 7.5).
+- Rent is in INR per month. Each model works on `ln(rent)`. Estimates are rounded to whole rupees.
+
+### 7.3 Robust-median model (v1)
+
+The model is a shrinkage median over cells of comparable listings.
+
+**Adjustments before the median.** Two terms are removed from each row's log rent before it enters a cell:
+
+- **Area.** `eps(bhk) x ln(area / refArea(bhk))`. `refArea` is the median area for the BHK count. `eps` is a per-BHK slope of log rent on log area within localities, fitted by Theil-Sen on up to 2,000 rows. It needs at least 20 rows for the BHK, and is clamped to [0.2, 0.8]. Otherwise a pooled value is used, then the default 0.35.
+- **Furnishing.** A log factor per BHK for `furnished` and `unfurnished` relative to `semi`. It is estimated from within-locality pairs (at least 3 rows per side, at least 5 qualifying localities). Otherwise it falls back to a city-wide estimate, and then to zero. The method used is stored (`paired`, `city` or `none`).
+
+**Cells.** Adjusted log rent is grouped at four levels, from most to least specific:
+
+| Level | Cell key | Note |
+|---|---|---|
+| L1 | locality, BHK, furnishing | Skipped when furnishing is unknown |
+| L2 | locality, BHK | |
+| L3 | zone, BHK | |
+| L4 | BHK (city) | Anchor. Always present for a fitted BHK |
+
+**Shrinkage.** Each level's median is blended with the coarser level above it, from the most general (L4) to the most specific (L1). The weight for a level with `n` rows is `n / (n + 10)`. The city anchor has weight 1. The result is the centre `mu`, and the estimate is `exp(mu + furnishing term + area term)`.
+
+**Basis.** The basis is the most specific level with at least 10 rows (`basisMinN`). If none has 10, the basis is L4.
+
+**Leave-one-out.** A listing in the fit set is predicted without itself. When a cell has fewer than 30 rows, its values are stored and the listing's own value is removed exactly. For larger cells the stored median and MAD are used with one row subtracted from the count, which is an approximation. Predictions for listings outside the fit set use the full cell.
+
+**Interval.** `low = expected x exp(-h)` and `high = expected x exp(+h)`, with `h = 1.4826 x max(MAD, 0.05)`. MAD is the basis cell's MAD of adjusted log rent. The floor of 0.05 gives a minimum half-width of about 7.7%.
+
+**Confidence.** Let `nEff` be the basis count when the basis is L1 or L2. Otherwise `nEff` is the L2 count.
+
+| Level | Condition |
+|---|---|
+| high | `nEff >= 20` and `MAD <= 0.25` |
+| medium | `nEff >= 8` |
+| low | otherwise |
+
+Each downgrade lowers the level by one: `area_missing` and `furnishing_missing` for flats, `food_missing` for PG beds.
+
+### 7.4 Hedonic model (v2, in progress)
+
+The hedonic model is a regression of log rent on listing attributes. Its design matrix has an intercept, zone (central is the reference), locality (ridge-penalised), BHK, studio, furnishing (semi is the reference), log area against the BHK reference area, car parking, gated, lift and floor bands. Missing values have their own indicator columns.
+
+Fitting uses ridge (`lambda = 1` by default, penalising locality columns) with Huber IRLS (`k = 1.345`, scale from MAD). Exact leave-one-out uses the final IRLS weights. The fit, predict and cross-validation code is not yet in the engine (section 7.1).
+
+### 7.5 PG beds
+
+PG beds use a separate submodel with no area term.
+
+- Food: a log factor per sharing level (`single`, `double`, `triple`, `quad`), paired within zone or city. An unknown food status adds the `food_missing` downgrade and uses no food term.
+- Cells: P1 locality, sharing and food; P2 zone, sharing and food; P3 sharing. The same shrinkage, basis and interval rules apply. Rows with unknown sharing get no estimate.
+
+### 7.6 Cross-validation and model choice
+
+Stage 6 fits both models and runs 5-fold cross-validation on the fit set. The model with the lower out-of-sample `mdape_obs` becomes active. The rule name is stored in `model_runs.metrics.selection`.
+
+Metrics, as stored in `model_runs.metrics.cv`:
+
+| Metric | Definition |
+|---|---|
+| `n` | Listings scored |
+| `mdape_obs` | Median of `|expected - rent| / rent` against observed asking rent |
+| `coverage_obs` | Share of observed rents inside `[low, high]` |
+| `mdape_obs_badged`, `n_badged` | `mdape_obs` restricted to listings that receive a badge |
+| `mdape_truth`, `coverage_truth` | Same against the synthetic truth rent (synthetic mode only; never stored as a production input) |
+
+Both models' metrics are stored. The active row has `is_active = true`, and there is exactly one (`model_runs_one_active_idx`). The PG-only error is stored as `metrics.pg.looMdapeObs`.
+
+Acceptance gate (`pnpm eval:fairrent`, `FAIRRENT_LIMITS`): the active model must have `mdape_vs_truth <= 0.08` and `coverage_obs` between 0.55 and 0.80.
+
+### 7.7 Confidence and badges
+
+Each estimate carries a confidence. The badge is computed from `delta = (rent - expected) / expected`, using integer rupees. The badge bins are right-closed, so each boundary belongs to the cheaper bin.
+
+| Badge | Condition on delta |
+|---|---|
+| `great_deal` | `delta <= -0.20` |
+| `good_price` | `-0.20 < delta <= -0.08` |
+| `fair` | `-0.08 < delta <= +0.08` |
+| `above_market` | `+0.08 < delta <= +0.20` |
+| `overpriced` | `delta > +0.20` |
+
+A listing with `low` confidence gets no badge. Its `fair_rent_inr`, bounds, `delta` and badge are NULL, and its explanation is `Not enough comparable listings.` Delta is stored as a `real`, so checks use `Math.fround(delta)`.
+
+The explanation sentence reads from the structured basis, not the trace. It gives the expected rent, the listing's attributes, and the percentage relative to expected, rounded half away from zero.
+
+## 8. Deals (stage 7)
+
+Stage 7 picks the listings worth a closer look. Code: `packages/engine/src/deals/score.ts` (pure) and `packages/ingest/src/pipeline/deals.ts`. It runs on the estimates of the active model only.
+
+### 8.1 Eligibility
+
+A listing is a deal only if it passes every rule below. `DEAL_LIMITS` holds the numeric limits.
+
+| Rule | Fails when |
+|---|---|
+| `NO_ESTIMATE` | No estimate, or delta is missing |
+| `DELTA_ABOVE_MAX` | `delta > -0.20` (the deal must be at least 20% below fair) |
+| `DEAL_TOO_GOOD_TO_VERIFY` | `delta < -0.55`. The row is quarantined, counted, and never a deal |
+| `LOW_CONFIDENCE` | Confidence is `low` |
+| `QUALITY_NOT_ACCEPTED` | Canonical row is rejected |
+| `QUALITY_WARNING` | Any warning other than `DEPOSIT_MISSING` |
+| `FEW_PHOTOS` | Fewer than 3 photos |
+| `AREA_UNKNOWN` | Area is missing |
+| `STALE` | Last seen more than 14 days before `asOf` |
+| `SOURCE_SPREAD` | Max rent across sources exceeds min rent by more than 15% of min |
+
+The deal band is therefore `-0.55 <= delta <= -0.20`, which is the `great_deal` badge band without its too-good tail. Quarantined rows still appear in the quality panel count.
+
+### 8.2 Score
+
+Eligible listings get a score. The score rewards the size of the discount, confidence, freshness and data completeness:
+
+```
+score = magnitude x confW x freshness x completeness
+
+magnitude    = -delta                                  (positive for a deal)
+confW        = 1.00 high, 0.75 medium
+freshness    = max(0.5, 1 - ageDays / 30)              ageDays = days from first_seen_at to asOf
+completeness = 0.80 + 0.20 x k / 4                     k = count of: deposit known, >= 5 photos, floor known, parking known
+```
+
+Ranking sorts by score, descending, then by listing id, ascending, so results are reproducible.
+
+The reason sentence has the form `N% below fair rent · saves ₹X/mo · <confidence> confidence (<nEff> comps) · listed <age> · on <N> sources`. The savings figure is `expected - rent`, and the percentage is rounded half away from zero.
+
+### 8.3 Measured metrics
+
+Not yet measured. `pnpm eval:deals` requires an active model run and reports precision, recall and `too_good_in_deals`. Acceptance gate (`DEALS_LIMITS`): precision >= 0.85, recall >= 0.75 over deal units with an active listing, and `too_good_in_deals = 0`. Recall over all deal units is printed as an informational figure.

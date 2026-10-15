@@ -2,7 +2,9 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { formatINR } from '@roofline/engine';
+import { FairBadge, FairnessRuler } from '@/components/fair/FairnessRuler';
 import { PriceHistory } from '@/components/listing/PriceHistory';
+import { NOT_ENOUGH_COMPS_COPY } from '@/lib/fairness';
 import { parseListingId } from '@/lib/listing-detail';
 import { getListingDetail, resolveListing } from '@/lib/queries';
 
@@ -59,7 +61,42 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
           </div>
         </div>
 
-        <section aria-labelledby="cost-title" className="min-w-0 self-start rounded-[var(--radius-panel)] border border-line bg-surface p-5">
+        <div className="flex min-w-0 flex-col gap-4 self-start">
+        <section aria-labelledby="fair-title" data-testid="fair-panel" className="min-w-0 rounded-[var(--radius-panel)] border border-line bg-surface p-5">
+          <h2 id="fair-title" className="type-display text-[22px] leading-[28px]">Is this rent fair?</h2>
+          {l.fair?.badge ? (
+            <div className="mt-4 flex flex-col gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <FairBadge fair={l.fair} />
+                <span className="figures text-indigo-2">
+                  {l.fair.confidence === 'high' ? 'High' : 'Medium'} confidence
+                </span>
+              </div>
+              <FairnessRuler rentInr={l.rentInr} fair={l.fair} labels />
+              <dl className="figures grid grid-cols-[auto_1fr] gap-x-8 gap-y-2">
+                <dt className="text-indigo-2">Fair estimate</dt>
+                <dd className="text-right font-medium">{formatINR(l.fair.fairInr)} a month</dd>
+                {l.fair.lowInr != null && l.fair.highInr != null && (
+                  <>
+                    <dt className="text-indigo-2">Comparable range</dt>
+                    <dd data-testid="fair-interval" className="text-right font-medium">
+                      {formatINR(l.fair.lowInr)} to {formatINR(l.fair.highInr)}
+                    </dd>
+                  </>
+                )}
+              </dl>
+              {l.fair.explanation && <p data-testid="fair-explanation" className="text-indigo-2">{l.fair.explanation}</p>}
+              <p className="text-[13px] text-indigo-2">An estimate from comparable listings, not an appraisal.</p>
+            </div>
+          ) : (
+            <p data-testid="fair-unavailable" className="mt-3 text-indigo-2">
+              <span className="font-semibold text-indigo">{NOT_ENOUGH_COMPS_COPY}.</span> There are too few similar homes nearby to
+              judge this rent, so we show no verdict.
+            </p>
+          )}
+        </section>
+
+        <section aria-labelledby="cost-title" className="min-w-0 rounded-[var(--radius-panel)] border border-line bg-surface p-5">
           <h2 id="cost-title" className="type-display text-[22px] leading-[28px]">What it costs to move in</h2>
           <dl className="figures mt-4 grid grid-cols-[auto_1fr] gap-x-8 gap-y-3">
             <dt className="text-indigo-2">Rent</dt>
@@ -72,6 +109,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             </dd>
           </dl>
         </section>
+        </div>
       </div>
 
       <section aria-labelledby="sources-title" className="mt-10">

@@ -1,7 +1,7 @@
 # Architecture (v1)
 
 **Last Updated:** 2026-10-16
-**Status:** v1 = Phase 0 (scaffold, shell), Phase 1 (data foundation) and the deduplication stage of Phase 2 (stage 5). Items marked *planned* are in PLAN.md and do not exist in the code yet.
+**Status:** v1 = Phase 0 (scaffold, shell), Phase 1 (data foundation), the deduplication stage of Phase 2 (stage 5), and the Phase 3 fair-rent and deals code (stages 6 and 7). Stage 6 is not runnable yet: the hedonic fit and predict, and `crossValidate`, are not exported by the engine. Items marked *planned* are in PLAN.md and do not exist in the code yet.
 
 Roofline is a pnpm monorepo: one Next.js app, three libraries. The engine is pure domain logic, the database package owns schema and access, and the ingest package turns sources into accepted listings.
 
@@ -51,6 +51,8 @@ Pure TypeScript. No I/O, no clock (`asOf` is an input), no randomness, no depend
 | `locality/` | `norm.ts`, `jaro-winkler.ts`, `resolve.ts` | `normLocality`, `isStopLocality`, `jaroWinkler`, `buildLocalityIndex`, `resolveLocality` | ingest |
 | `quality/` | `constants.ts`, `types.ts`, `rules.ts`, `outliers.ts`, `assess.ts` | `REASON_CODES`, `WARNING_CODES`, `QUALITY_BOUNDS`, `OUTLIER_PARAMS`, `hardRules`, `buildBaseline`, `checkOutlier`, `assessRow`, `assessBatch` | ingest, synthetic generator |
 | `dedup/` | `types.ts`, `dhash.ts`, `blocking.ts`, `similarity.ts`, `cluster.ts`, `canonical.ts`, `index.ts` | `DedupRecord`, `BLOCKING`, `SIMILARITY`, `GUARDS`, `indexKeys`, `probeKeys`, `candidatePairs`, `gate`, `scorePair`, `clusterRecords`, `pickCanonical`, `assignIdentities` | ingest |
+| `fairrent/` | `types.ts`, `robust-median.ts`, `hedonic.ts`, `badge.ts`, `explain.ts`, `index.ts` | `FairRentEstimate`, `Prediction`, `RobustMedianArtifact`, `fitRobustMedian`, `predictRobustMedian`, `shrinkChain`, `intervalFor`, `confidenceFor`, `badgeFor`, `deltaOf`, `storedDelta`, `explain`, `buildDesign`, `irlsHuber`, `looPrediction` | ingest |
+| `deals/` | `score.ts`, `index.ts` | `DEAL_RULES`, `DEAL_LIMITS`, `dealEligibility`, `dealComponents`, `dealScore`, `dealReason`, `evaluateDeal`, `rankDeals` | ingest |
 
 Tests live in `packages/engine/test/` (one folder per module). Coverage reports exist under `packages/engine/coverage/` (generated, not maintained).
 
@@ -93,7 +95,44 @@ Pure stage 5 logic. The ingest side (`packages/ingest/src/pipeline/dedup.ts`) lo
 
 Tests: `packages/engine/test/dedup/` (`blocking`, `canonical`, `cluster`, `similarity` specs plus `fixtures.ts` and `helpers.ts`).
 
-*Planned:* `fairrent/`, `deals/`, `commute/`, `tco/`, `filters/`, `alerts/`, `query/` (PLAN.md section 3).
+#### Fair-rent and deals codemap (`packages/engine/src/fairrent/`, `packages/engine/src/deals/`)
+
+Pure stage 6 and stage 7 logic. The ingest side (`packages/ingest/src/pipeline/fairrent.ts`) loads the fit set, calls the models, writes `model_runs` and `fair_rent_estimates`, denormalises onto `listings`, then runs the deal evaluation and writes the deal columns.
+
+```
+                 FitListing (types.ts)              one active listing: flat or PG bed
+                        |
+     +------------------+-------------------+
+     |                                      |
+  robust-median.ts (v1)                hedonic.ts (v2, partial)
+  area + furnishing terms,             buildDesign, irlsHuber,
+  L1-L4 / P1-P3 cells, shrinkChain,    looPrediction
+  basis, LOO, intervalFor,             (fit/predict not yet exported)
+  confidenceFor
+     |                                      |
+     +------------------+-------------------+
+                        | Prediction (expected, low, high, confidence, basis, trace)
+                        v
+  badge.ts: deltaOf, storedDelta, badgeFor   explain.ts: explain, NOT_ENOUGH_COMPS
+                        |  FairRentEstimate
+                        v
+  deals/score.ts (stage 7, active model only)
+  dealEligibility -> dealComponents -> dealScore -> dealReason -> evaluateDeal -> rankDeals
+```
+
+| File | Responsibility | Key exports | Imports |
+|---|---|---|---|
+| `types.ts` | Listing inputs, artifact shapes, constants shared by both models | `FlatInput`, `PgInput`, `FitListing`, `Prediction`, `FairRentEstimate`, `RobustMedianArtifact`, `CommonConstants` | `trace` (types only) |
+| `robust-median.ts` | Area epsilon, furnishing factors, PG food factor, cells, shrinkage, basis, leave-one-out, fit and predict | `DEFAULT_CONSTANTS`, `SHRINK_K`, `shrinkWeight`, `shrinkChain`, `selectBasis`, `confidenceFor`, `intervalFor`, `areaEpsilon`, `furnishingFactors`, `fitPgSubmodel`, `fitRobustMedian`, `predictRobustMedian` | `stats`, `trace`, `version` |
+| `hedonic.ts` | Sparse design matrix, ridge Huber IRLS, exact leave-one-out | `buildDesign`, `irlsHuber`, `looPrediction` | `stats/descriptive`, `stats/linalg` |
+| `badge.ts` | Right-closed badge bins and the stored delta | `BADGE_EDGES`, `deltaOf`, `storedDelta`, `badgeFor` | none |
+| `explain.ts` | Explanation sentences, read from the structured basis | `NOT_ENOUGH_COMPS`, `explain`, `pctHalfAway` | `money` |
+| `index.ts` | Barrel; re-exported from the engine root (types and robust-median; `badge` and `explain` through the root index) | | |
+| `deals/score.ts` | Eligibility rules, score components, ranking, reason text | `DEAL_RULES`, `DEAL_LIMITS`, `dealEligibility`, `dealComponents`, `dealScore`, `dealReason`, `evaluateDeal`, `rankDeals` | `money`, `fairrent/explain` |
+
+Tests: `packages/engine/test/fairrent/` (`badge`, `explain`, `hedonic`, `robust-median` specs) and `packages/engine/test/deals/score.test.ts`. Ingest tests: `packages/ingest/test/fairrent-stage.test.ts`, `fairrent-eval.test.ts`, `fairrent.integration.test.ts`.
+
+*Planned:* `commute/`, `tco/`, `filters/`, `alerts/`, `query/` (PLAN.md section 3).
 
 ### `@roofline/db` (`packages/db`)
 
@@ -137,10 +176,16 @@ Sources, pipeline and the synthetic seed. May import engine and db. Must not imp
 | `src/pipeline/dedup.ts` | Stage 5: `loadMembers()`, scoring of dirty blocks, clustering, identity assignment, writes to `dedup_pairs`, `listings`, `listing_redirects` |
 | `src/eval/quality.ts` | `evalQuality()`: planted rejects vs. pipeline rejects |
 | `src/eval/dedup-eval.ts` | `evalDedup()`: pairwise and B-cubed metrics, hard-negative merges, blocking recall against `seed_truth` |
-| `src/cli.ts` | `roofline-ingest` commander CLI: `run [--week n] [--full]`, `seed`, `eval quality`, `eval dedup` |
-| `test/` | Unit tests, fixture adapter, pipeline integration test (40-row fixture), dedup integration and eval tests, generator snapshot |
+| `src/pipeline/fairrent.ts` | Stage 6: `loadFitSet()`, `loadTruth()`, `runModelStages()`. Fits both models, writes `model_runs` and `fair_rent_estimates`, denormalises onto `listings`. One transaction |
+| `src/pipeline/fairrent-core.ts` | Pure helpers for stages 6 and 7: DB row to engine input, estimate row, listing denormalisation plan, deal input |
+| `src/pipeline/models.ts` | `engineModels()`: the only file that imports the fair-rent model functions from the engine |
+| `src/pipeline/deals.ts` | Stage 7: `evaluateAll()` (eligibility, ranking) and `writeDeals()` |
+| `src/eval/fairrent-eval.ts` | `evalFairRent()`: gates the stored cross-validated metrics of the active run (`pnpm eval:fairrent`) |
+| `src/eval/deals-eval.ts` | `evalDeals()`: deal precision and recall against `seed_truth.true_deals` (`pnpm eval:deals`) |
+| `src/cli.ts` | `roofline-ingest` commander CLI: `run [--week n] [--full]`, `seed`, `model fit`, `eval quality`, `eval dedup`, `eval fairrent`, `eval deals` |
+| `test/` | Unit tests, fixture adapter, pipeline integration test (40-row fixture), dedup integration and eval tests, fair-rent stage and eval tests, generator snapshot |
 
-*Planned:* `adapters/csv-feed/`, `adapters/owner-submission/` (schema only in v1), `llm/` (optional LLM extraction), pipeline stages 6 to 8.
+*Planned:* `adapters/csv-feed/`, `adapters/owner-submission/` (schema only in v1), `llm/` (optional LLM extraction), pipeline stage 8.
 
 ### `@roofline/web` (`apps/web`)
 
@@ -201,6 +246,18 @@ One transaction per week. All adapters are fetched first, so every source shares
 6. Delist rows the source no longer returns (kept, `is_active = false`).
 7. Dedup, identity and clusters (stage 5, `pipeline/dedup.ts`): score candidate pairs in the dirty blocks, write `dedup_pairs`, cluster under the chaining guards, assign or mint `listings.id`, write `listing_redirects` for replaced ids, and upsert `listings`. Runs inside the same transaction, after persist and delisting.
 8. Write counts to `ingest_runs.stats` and mark each run `ok`. Record unmatched locality strings in `locality_unmatched`.
+
+### Fair rent and deals (`pnpm model:fit`, stages 6 and 7)
+
+Not part of `runWeek`. It runs on demand, against the latest successful ingest run's `as_of`, and is one transaction.
+
+1. Load the fit set: active listings with an accepted canonical member, plus their cluster aggregates and seeded truth when present (`loadFitSet`, `loadTruth`).
+2. Cross-validate both models and fit both on the full fit set (`models.ts`). The engine functions this needs are not yet exported (section 2).
+3. Reset `is_active` on `model_runs`, insert one row per model, and store the active model by its cross-validated `mdape_obs`.
+4. Predict every fit listing in-sample (leave-one-out) with both models and write `fair_rent_estimates` for each run.
+5. Clear the fair and deal columns on every listing, then write the active run's values, including `NOT_ENOUGH_COMPS` for listings without a verdict.
+6. Evaluate deals on the active estimates (`evaluateAll`) and write `is_deal`, `deal_score` and `deal_reason`.
+7. Store PG and deal diagnostics in `model_runs.metrics`, then commit.
 
 ### Seed (`pnpm db:fresh`)
 
