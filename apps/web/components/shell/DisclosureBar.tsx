@@ -33,7 +33,7 @@ export function DisclosureBar({ mode }: { mode: string }) {
       <div className="mx-auto flex max-w-[1320px] items-center gap-2.5 py-1.5 pl-4 pr-1.5 md:pl-8 md:pr-6">
         <Info size={15} strokeWidth={1.75} aria-hidden className="shrink-0 text-marigold" />
         <p className="min-w-0 flex-1 truncate sm:whitespace-normal">
-          <span className="font-semibold text-white">Demo data.</span> These are synthetic Bangalore listings, not real offers.{' '}
+          <span className="font-semibold text-white">Demo data.</span> These are synthetic Bangalore listings with AI-generated photos, not real offers.{' '}
           <Link href="/methodology" className="underline decoration-white/40 underline-offset-2 hover:decoration-white">
             How it is built
           </Link>

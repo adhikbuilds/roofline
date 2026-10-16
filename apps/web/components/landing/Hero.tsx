@@ -60,7 +60,7 @@ export function Hero({
             </p>
           )}
           <p className="mt-2 text-[13px] leading-5 text-ink-3">
-            Demo data: the listings are synthetic. The counts and fair rents are computed live from them.
+            Demo data: the listings are synthetic and the photos are AI-generated. The counts and fair rents are computed live from the listings.
           </p>
         </div>
         <Collage deals={deals} />
@@ -127,7 +127,7 @@ function Collage({ deals }: { deals: DealRow[] }) {
             <FairnessRuler rentInr={feature.rentInr} fair={feature.fair} />
             <span className="text-right text-[13px] font-semibold leading-4 text-deal">{highlight}</span>
           </div>
-          <p className="mt-2 text-[12px] leading-4 text-ink-3">A real deal from the live ranking</p>
+          <p className="mt-2 text-[12px] leading-4 text-ink-3">Top of the live deals ranking (demo data)</p>
         </Link>
       </Reveal>
     </div>
