@@ -2,11 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { NAV } from './nav';
-
-function isActive(pathname: string, href: string) {
-  return href === '/' ? pathname === '/' : pathname.startsWith(href);
-}
+import { isActive, NAV } from './nav';
 
 export function NavLinks() {
   const pathname = usePathname();
@@ -20,8 +16,8 @@ export function NavLinks() {
               <Link
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
-                className={`type-label rounded-full px-3.5 py-1.5 text-[14px] transition-colors duration-150 ${
-                  active ? 'bg-purple text-white' : 'text-indigo-2 hover:bg-purple-soft hover:text-indigo'
+                className={`type-label rounded-[12px] px-3.5 py-2 text-[14px] transition-colors duration-150 ${
+                  active ? 'bg-purple-50 text-purple-600' : 'text-ink-2 hover:bg-purple-50 hover:text-ink'
                 }`}
               >
                 {item.label}
@@ -41,7 +37,7 @@ export function TabBar() {
   return (
     <nav
       aria-label="Sections"
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white/90 backdrop-blur-xl pb-[env(safe-area-inset-bottom)] md:hidden"
     >
       <ul className="grid grid-cols-4">
         {TABS.map((item) => {
@@ -57,7 +53,7 @@ export function TabBar() {
               >
                 <span
                   aria-hidden="true"
-                  className={`h-1 w-6 rounded-full ${active ? 'bg-purple' : 'bg-transparent'}`}
+                  className={`h-1 rounded-full transition-all duration-200 ${active ? 'w-6 bg-purple' : 'w-1.5 bg-transparent'}`}
                 />
                 {item.label}
               </Link>

@@ -7,15 +7,15 @@ test('home header shows the duplicates-merged number', async ({ page }) => {
   await expect(page.getByTestId('ledger')).toContainText('duplicates merged');
 });
 
-test('listing rows link to their page', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.getByTestId('listing-row').first().getByRole('link')).toHaveAttribute('href', /^\/listing\/[0-9a-f-]{36}$/);
+test('listing cards link to their page', async ({ page }) => {
+  await page.goto('/homes');
+  await expect(page.getByTestId('listing-card').first().locator('h3 a')).toHaveAttribute('href', /^\/listing\/[0-9a-f-]{36}$/);
 });
 
 test('a multi-source listing shows its sources and a price history', async ({ page }) => {
   const id = await multiSourceId();
   await page.goto(`/listing/${id}`);
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('₹');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText(' in ');
   await expect(page.getByRole('heading', { name: 'Also on 2 sources' })).toBeVisible();
   const rows = page.getByTestId('source-row');
   await expect(rows).toHaveCount(2);
@@ -24,7 +24,7 @@ test('a multi-source listing shows its sources and a price history', async ({ pa
   const chart = page.getByRole('img', { name: /price history/i });
   await expect(chart).toBeVisible();
   expect(await chart.locator('[data-testid="history-point"]').count()).toBeGreaterThanOrEqual(2);
-  await expect(page.locator('img[src^="/img/plate/"]').first()).toBeVisible();
+  await expect(page.getByTestId('gallery')).toBeVisible();
 });
 
 test('a malformed id is a 404', async ({ page }) => {
@@ -59,5 +59,5 @@ test('the deposit-not-listed variant reads plainly', async ({ page }) => {
   );
   test.skip(!id, 'every listing has a deposit in this dataset');
   await page.goto(`/listing/${id}`);
-  await expect(page.getByText('Deposit not listed')).toBeVisible();
+  await expect(page.getByTestId('cost-card').getByText('Deposit not listed')).toBeVisible();
 });

@@ -1,3 +1,8 @@
+import path from 'node:path';
 import { defineConfig } from 'vitest/config';
 
-export default defineConfig({ test: { include: ['test/**/*.test.ts'] } });
+export default defineConfig({
+  esbuild: { jsx: 'automatic' },
+  resolve: { alias: { '@': path.resolve(__dirname, '.') } },
+  test: { include: ['test/**/*.test.{ts,tsx}'] },
+});

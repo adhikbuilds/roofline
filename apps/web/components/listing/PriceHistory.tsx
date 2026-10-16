@@ -27,7 +27,28 @@ export function PriceHistory({ history }: { history: HistoryPoint[] }) {
       : `Price history: ${formatINR(first.rentInr)} a month on ${day(first.at)}, ${formatINR(last.rentInr)} on ${day(last.at)}, ${history.length} observations.`;
   return (
     <figure>
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label} className="h-auto w-full max-w-[720px]">
+      <div className="figures mb-3 flex flex-wrap items-center gap-2">
+        <span className="type-display text-[26px] leading-8">{formatINR(last.rentInr)}</span>
+        {last.rentInr !== first.rentInr && (
+          <span
+            data-testid="history-change"
+            className={`type-label rounded-full px-2.5 py-0.5 text-[13px] ${last.rentInr < first.rentInr ? 'bg-[#e8f6f0] text-deal' : 'bg-marigold-50 text-above-text'}`}
+          >
+            {last.rentInr < first.rentInr ? 'Down' : 'Up'} {Math.round((Math.abs(last.rentInr - first.rentInr) / first.rentInr) * 100)}% since {day(first.at)}
+          </span>
+        )}
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label} className="h-auto w-full">
+        <defs>
+          <linearGradient id="ph-fill" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor="var(--color-purple)" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="var(--color-purple)" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        {[0.25, 0.5, 0.75].map((f) => (
+          <line key={f} x1="0" y1={H * f} x2={W} y2={H * f} stroke="var(--color-line)" strokeDasharray="3 5" strokeWidth="1" />
+        ))}
+        <path d={`${chart.path} V${H - 1} H${chart.points[0]!.x} Z`} fill="url(#ph-fill)" />
         <line x1="0" y1={H - 1} x2={W} y2={H - 1} stroke="var(--color-line)" strokeWidth="1" />
         <path d={chart.path} fill="none" stroke="var(--color-purple)" strokeWidth="2.5" strokeLinejoin="round" />
         {chart.points.map((p) => (

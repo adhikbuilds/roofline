@@ -21,11 +21,29 @@ test('the locality filter narrows the feed', async ({ page }) => {
   const pick = options.find((o) => o.v);
   expect(pick, 'at least one locality has a deal').toBeTruthy();
   await select.selectOption(pick!.v);
-  await page.getByRole('button', { name: 'Apply filters' }).click();
   await expect(page).toHaveURL(new RegExp(`locality=${pick!.v}`));
   const rows = page.getByTestId('deal-row');
-  expect(await rows.count()).toBeGreaterThan(0);
+  await expect(rows.first()).toContainText(pick!.t);
   for (const r of await rows.all()) await expect(r).toContainText(pick!.t);
+});
+
+test('a BHK chip updates the URL and the cards, and back restores the feed', async ({ page }) => {
+  await page.goto('/deals');
+  const all = await page.getByTestId('deal-row').count();
+  await page.getByTestId('chip-bhk-2').click();
+  await expect(page).toHaveURL(/bhk=2/);
+  await expect(page.getByTestId('chip-bhk-2')).toHaveAttribute('aria-current', 'true');
+  for (const r of await page.getByTestId('deal-row').all()) await expect(r).toContainText('2 BHK');
+  await page.goBack();
+  await expect(page).not.toHaveURL(/bhk=/);
+  await expect(page.getByTestId('deal-row')).toHaveCount(all);
+});
+
+test('deal cards show a rank and are ranked 1..n in order', async ({ page }) => {
+  await page.goto('/deals');
+  const ranks = await page.getByTestId('deal-rank').allTextContents();
+  expect(ranks.length).toBeGreaterThan(0);
+  expect(ranks).toEqual(ranks.map((_, i) => String(i + 1)));
 });
 
 test('the BHK filter narrows the feed', async ({ page }) => {
@@ -58,12 +76,12 @@ test('a filter with no matches shows an honest empty state', async ({ page }) =>
 
 test('a deal links to a listing page with its ruler, interval and explanation', async ({ page }) => {
   await page.goto('/deals');
-  await page.getByTestId('deal-row').first().getByRole('link').first().click();
+  await page.getByTestId('deal-row').first().locator('h3 a').click();
   await expect(page).toHaveURL(/\/listing\/[0-9a-f-]{36}$/);
-  await expect(page.getByTestId('fair-panel').getByTestId('fairness-ruler')).toBeVisible();
+  await expect(page.getByTestId('fair-panel').getByTestId('fair-ruler')).toBeVisible();
   await expect(page.getByTestId('fair-interval')).toContainText('to');
   await expect(page.getByTestId('fair-explanation')).not.toBeEmpty();
-  await expect(page.getByTestId('fair-badge')).toBeVisible();
+  await expect(page.getByTestId('fair-panel').getByTestId('fair-badge')).toBeVisible();
 });
 
 test('a low-confidence listing says there are not enough comparable listings and shows no badge', async ({ page }) => {
@@ -75,15 +93,15 @@ test('a low-confidence listing says there are not enough comparable listings and
   await page.goto(`/listing/${id}`);
   await expect(page.getByTestId('fair-unavailable')).toContainText('Not enough comparable listings');
   await expect(page.getByTestId('fair-badge')).toHaveCount(0);
-  await expect(page.getByTestId('fairness-ruler')).toHaveCount(0);
+  await expect(page.getByTestId('fair-ruler')).toHaveCount(0);
 });
 
 test('home rows carry a badge and ruler or the not-enough-comps note', async ({ page }) => {
-  await page.goto('/');
-  const rows = page.getByTestId('listing-row');
+  await page.goto('/homes');
+  const rows = page.getByTestId('listing-card');
   for (const r of (await rows.all()).slice(0, 10)) {
     const hasRuler = await r.getByTestId('fairness-ruler').count();
-    const noVerdict = await r.getByTestId('no-verdict').count();
+    const noVerdict = await r.getByText('Not enough comparable listings').count();
     expect(hasRuler + noVerdict).toBe(1);
   }
 });

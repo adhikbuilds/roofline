@@ -1,23 +1,23 @@
 import { expect, test } from '@playwright/test';
 
-test('home shows ledger counts and either listing rows or the empty state', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.getByTestId('ledger')).toContainText(/listings from .* sources/);
-  const rows = page.getByTestId('listing-row');
-  const count = await rows.count();
+test('homes shows a card grid with load more, or the empty state', async ({ page }) => {
+  await page.goto('/homes');
+  const cards = page.getByTestId('listing-card');
+  const count = await cards.count();
   if (count === 0) {
-    await expect(page.getByText('No listings loaded yet')).toBeVisible();
+    await expect(page.getByTestId('homes-empty')).toBeVisible();
     return;
   }
-  expect(count).toBeLessThanOrEqual(40);
-  await expect(rows.first()).toContainText('₹');
-  await expect(rows.first().getByText(/move-in/i)).toBeVisible();
-  if (count === 40) await expect(page.getByRole('link', { name: 'Next page' })).toBeVisible();
+  expect(count).toBeLessThanOrEqual(24);
+  await expect(cards.first()).toContainText('₹');
+  await expect(cards.first().getByTestId('fairness-ruler')).toBeVisible();
+  if (count === 24) await expect(page.getByRole('button', { name: 'Load more homes' })).toBeVisible();
 });
 
-test('home tolerates a garbage page param', async ({ page }) => {
-  const res = await page.goto('/?page=abc');
+test('homes tolerates garbage params', async ({ page }) => {
+  const res = await page.goto('/homes?page=abc&bhk=zzz&sort=nope&min=-1&cursor=%00');
   expect(res?.status()).toBe(200);
+  await expect(page.getByTestId('homes-count')).toBeVisible();
 });
 
 test('localities table lists all 69 localities', async ({ page }) => {

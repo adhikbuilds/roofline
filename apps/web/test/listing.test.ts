@@ -79,3 +79,34 @@ describe('buildStepChart', () => {
     expect(Number.isFinite(c.points[0]!.x)).toBe(true);
   });
 });
+
+import { bigRulerLayout, fairGap } from '../lib/listing-detail';
+
+describe('bigRulerLayout', () => {
+  it('keeps every mark inside 0..100 and ordered by rupees', () => {
+    const r = bigRulerLayout({ rentInr: 20000, fairInr: 26000, lowInr: 22000, highInr: 30000 });
+    for (const p of Object.values(r)) expect(p).toBeGreaterThanOrEqual(0), expect(p).toBeLessThanOrEqual(100);
+    expect(r.rentPct).toBeLessThan(r.lowPct);
+    expect(r.lowPct).toBeLessThan(r.fairPct);
+    expect(r.fairPct).toBeLessThan(r.highPct);
+  });
+  it('pads the extremes away from the edges', () => {
+    const r = bigRulerLayout({ rentInr: 30000, fairInr: 26000, lowInr: 22000, highInr: 30000 }, 0.1);
+    expect(r.lowPct).toBe(10);
+    expect(r.highPct).toBe(90);
+  });
+  it('centres everything when all values coincide', () => {
+    expect(bigRulerLayout({ rentInr: 5, fairInr: 5, lowInr: 5, highInr: 5 })).toEqual({ lowPct: 50, highPct: 50, fairPct: 50, rentPct: 50 });
+  });
+});
+
+describe('fairGap', () => {
+  it('reports side, rupee gap and percent', () => {
+    expect(fairGap(20000, 25000)).toEqual({ side: 'below', diffInr: 5000, pct: 20 });
+    expect(fairGap(30000, 25000)).toEqual({ side: 'above', diffInr: 5000, pct: 20 });
+    expect(fairGap(25000, 25000)).toEqual({ side: 'at', diffInr: 0, pct: 0 });
+  });
+  it('does not divide by zero', () => {
+    expect(fairGap(100, 0).pct).toBe(0);
+  });
+});

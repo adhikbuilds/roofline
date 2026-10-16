@@ -1,0 +1,127 @@
+[
+  {
+    "file": "living-01.jpg",
+    "kind": "living",
+    "alt": "Living room with a grey sofa, tiled floor and a balcony door (AI-generated illustration)"
+  },
+  {
+    "file": "bedroom-01.jpg",
+    "kind": "bedroom",
+    "alt": "Bedroom with a double bed, wardrobe and a grilled window (AI-generated illustration)"
+  },
+  {
+    "file": "bedroom-02.jpg",
+    "kind": "bedroom",
+    "alt": "Bedroom with a double bed, study desk and air conditioner (AI-generated illustration)"
+  },
+  {
+    "file": "bedroom-03.jpg",
+    "kind": "bedroom",
+    "alt": "Single bedroom with a yellow bedspread and a study table (AI-generated illustration)"
+  },
+  {
+    "file": "bedroom-04.jpg",
+    "kind": "bedroom",
+    "alt": "Master bedroom with a king bed and a balcony door (AI-generated illustration)"
+  },
+  {
+    "file": "exterior-01.jpg",
+    "kind": "exterior",
+    "alt": "Mid-rise apartment building with balconies on a leafy street (AI-generated illustration)"
+  },
+  {
+    "file": "exterior-02.jpg",
+    "kind": "exterior",
+    "alt": "Three-storey house with rental floors on a quiet lane (AI-generated illustration)"
+  },
+  {
+    "file": "exterior-03.jpg",
+    "kind": "exterior",
+    "alt": "Gated high-rise apartment complex with a landscaped garden (AI-generated illustration)"
+  },
+  {
+    "file": "exterior-04.jpg",
+    "kind": "exterior",
+    "alt": "Old Bangalore house with a tiled roof and front garden (AI-generated illustration)"
+  },
+  {
+    "file": "exterior-05.jpg",
+    "kind": "exterior",
+    "alt": "Four-storey apartment building at dusk with stilt parking (AI-generated illustration)"
+  },
+  {
+    "file": "kitchen-01.jpg",
+    "kind": "kitchen",
+    "alt": "Modular kitchen with a granite counter, sink and chimney (AI-generated illustration)"
+  },
+  {
+    "file": "kitchen-02.jpg",
+    "kind": "kitchen",
+    "alt": "L-shaped kitchen with a granite counter and wooden cabinets (AI-generated illustration)"
+  },
+  {
+    "file": "kitchen-03.jpg",
+    "kind": "kitchen",
+    "alt": "Galley kitchen with green granite counters and a window (AI-generated illustration)"
+  },
+  {
+    "file": "kitchen-04.jpg",
+    "kind": "kitchen",
+    "alt": "Open kitchen with a quartz island and bar stools (AI-generated illustration)"
+  },
+  {
+    "file": "living-02.jpg",
+    "kind": "living",
+    "alt": "Living room with a grey sofa, tiled floor and a balcony door (AI-generated illustration)"
+  },
+  {
+    "file": "living-03.jpg",
+    "kind": "living",
+    "alt": "Living room with a grey sofa, tiled floor and a balcony door (AI-generated illustration)"
+  },
+  {
+    "file": "living-04.jpg",
+    "kind": "living",
+    "alt": "Open living and dining area with a wooden table and a balcony (AI-generated illustration)"
+  },
+  {
+    "file": "living-05.jpg",
+    "kind": "living",
+    "alt": "Open living and dining area with a wooden table and a balcony (AI-generated illustration)"
+  },
+  {
+    "file": "living-06.jpg",
+    "kind": "living",
+    "alt": "Furnished living room with a teal sofa and a skyline view (AI-generated illustration)"
+  },
+  {
+    "file": "living-07.jpg",
+    "kind": "living",
+    "alt": "Empty unfurnished living room with a balcony window (AI-generated illustration)"
+  },
+  {
+    "file": "living-08.jpg",
+    "kind": "living",
+    "alt": "Compact 1RK studio with a sofa-cum-bed and kitchenette (AI-generated illustration)"
+  },
+  {
+    "file": "pg-01.jpg",
+    "kind": "pg",
+    "alt": "Shared PG room with two single beds, desks and wardrobes (AI-generated illustration)"
+  },
+  {
+    "file": "pg-02.jpg",
+    "kind": "pg",
+    "alt": "PG common dining and lounge area (AI-generated illustration)"
+  },
+  {
+    "file": "pg-03.jpg",
+    "kind": "pg",
+    "alt": "Single-occupancy PG room with a desk and cupboard (AI-generated illustration)"
+  },
+  {
+    "file": "pg-04.jpg",
+    "kind": "pg",
+    "alt": "Triple-sharing PG room with lockers and a study table (AI-generated illustration)"
+  }
+]

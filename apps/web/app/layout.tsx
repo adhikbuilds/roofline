@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     'Flats and PGs across Bangalore with duplicates merged, a fair-rent check on every listing, and commute times from your office.',
 };
 
-export const viewport: Viewport = { themeColor: '#1C2342', width: 'device-width', initialScale: 1 };
+export const viewport: Viewport = { themeColor: '#141A33', width: 'device-width', initialScale: 1 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -30,7 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="#main"
           className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-surface focus:px-4 focus:py-2"
         >
-          Skip to listings
+          Skip to content
         </a>
         <DisclosureBar mode={DATA_MODE} />
         <Header />

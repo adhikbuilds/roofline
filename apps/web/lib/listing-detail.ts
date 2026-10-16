@@ -73,3 +73,28 @@ export function buildStepChart(history: HistoryPoint[], width: number, height: n
   for (const p of points.slice(1)) path += ` H${p.x} V${p.y}`;
   return { points, path, minInr, maxInr };
 }
+
+export type BigRuler = { lowPct: number; highPct: number; fairPct: number; rentPct: number };
+
+/**
+ * Percent positions (0..100) for the full-width ruler. The domain spans the comparable range, the fair estimate and the
+ * listing rent, padded by `pad` of the span on each side so no mark sits on the edge. A zero span centres everything.
+ */
+export function bigRulerLayout(v: { rentInr: number; fairInr: number; lowInr: number; highInr: number }, pad = 0.12): BigRuler {
+  const lo = Math.min(v.lowInr, v.fairInr, v.rentInr);
+  const hi = Math.max(v.highInr, v.fairInr, v.rentInr);
+  const span = hi - lo;
+  const pos = (r: number) => {
+    if (!(span > 0)) return 50;
+    const p = (pad + (1 - 2 * pad) * ((r - lo) / span)) * 100;
+    return Math.round(Math.min(100, Math.max(0, p)) * 10) / 10;
+  };
+  return { lowPct: pos(v.lowInr), highPct: pos(v.highInr), fairPct: pos(v.fairInr), rentPct: pos(v.rentInr) };
+}
+
+/** "₹4,200 below the fair estimate" style headline pieces; `side` drives the colour/wording in the panel. */
+export function fairGap(rentInr: number, fairInr: number): { side: 'below' | 'above' | 'at'; diffInr: number; pct: number } {
+  const diffInr = Math.abs(rentInr - fairInr);
+  const pct = fairInr > 0 ? Math.round((diffInr / fairInr) * 100) : 0;
+  return { side: rentInr < fairInr ? 'below' : rentInr > fairInr ? 'above' : 'at', diffInr, pct };
+}
