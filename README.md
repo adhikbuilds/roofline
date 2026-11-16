@@ -4,6 +4,17 @@
 
 Roofline is a rental-market explorer for Bangalore, built by adhikbuilds. v1 runs entirely on a fictional synthetic seed: no real listings, no scraped data, no third-party portal content. Five fictional sources (NestLane, RentBarn, KeyLoft, DoorVale, HearthGrid) feed a deterministic ingestion pipeline, and the web app shows what it accepted, with honest counts.
 
+![Roofline home: merged listings, fair-rent check and locality trends](docs/screens/phase-2-ui-v2.png)
+
+## Engineering choices
+
+- **A pure engine.** `@roofline/engine` does no I/O and uses no clock or randomness. Every derived value is stamped with `ENGINE_VERSION`, so results are reproducible and easy to test.
+- **Seven pipeline stages:** fetch, normalize, canonicalize locality, quality, persist, dedup, then fair rent and deals. Each weekly ingest runs as one database transaction, so every source is judged against the same statistical baseline.
+- **Robust data quality.** Hard rules come first. Then an outlier test based on median absolute deviation (MAD) runs against per-locality rent bands. Every rejection carries a reason code, and anything kept despite a problem carries a warning code.
+- **Locality resolution:** exact alias match, then Jaro–Winkler fuzzy match, then nearest PostGIS centroid.
+- **Dedup across sources.** Listings are grouped into candidate blocks, pairs are scored, and clusters are formed with guards against chaining. Merged listings get stable ids, and old ids redirect to them.
+- **Honest data.** v1 runs on a synthetic seed with planted defects, so the quality and dedup stages can be measured against known ground truth.
+
 Documentation:
 
 - [docs/architecture.md](docs/architecture.md): packages, codemap, boundaries, database roles
