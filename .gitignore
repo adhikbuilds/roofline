@@ -11,3 +11,6 @@ docs/recon/shots/
 docs/recon/*-text.md
 *.tsbuildinfo
 .cache/
+
+# Competitor research stays local only
+docs/recon/
